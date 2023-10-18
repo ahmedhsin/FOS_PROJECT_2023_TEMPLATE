@@ -1,5 +1,5 @@
 https://gcc.gnu.org/gcc-5/porting_to.html
-
+hi this is a test from implement mem
 "Adding the inline doesn't fix it. You also have to add static,"
 http://stackoverflow.com/questions/13147170/attribute-always-inline-failing
 
