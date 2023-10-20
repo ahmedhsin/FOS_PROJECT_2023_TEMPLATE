@@ -1,8 +1,8 @@
 // Simple command-line kernel prompt useful for
 // controlling the kernel and exploring the system interactively.
 
-
-
+// test from 1
+// test from 2
 #include <kern/cmd/command_prompt.h>
 
 #include <kern/proc/user_environment.h>
