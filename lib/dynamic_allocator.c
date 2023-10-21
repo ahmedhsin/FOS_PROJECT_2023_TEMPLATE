@@ -101,9 +101,11 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	struct BlockMetaData *initializeDynamicBlock = (struct BlockMetaData *) daStart;
 	initializeDynamicBlock->is_free = 1;
 	initializeDynamicBlock->size = initSizeOfAllocatedSpace;
+
 	//intialize the list
 	LIST_INIT(&linkedListMemoryBlocks);
 	LIST_INSERT_HEAD(&linkedListMemoryBlocks, initializeDynamicBlock);
+
 	//TODO: [PROJECT'23.MS1 - #5] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator()
 	//panic("initialize_dynamic_allocator is not implemented yet");
 }
@@ -157,9 +159,42 @@ void free_block(void *va)
 //=========================================
 // [4] REALLOCATE BLOCK BY FIRST FIT:
 //=========================================
-void *realloc_block_FF(void* va, uint32 new_size)
-{
+void *realloc_block_FF(void* va, uint32 new_size){
+	struct BlockMetaData *cur_block = (struct BlockMetaData*) va;
+	if(cur_block->size == new_size)
+		return va;
+
+	if(cur_block->size>new_size){
+		if(cur_block->size-new_size>=MetaDataSize()){
+			struct BlockMetaData* holder = (struct BlockMetaData*) (va+cur_block->size);
+			holder->size = cur_block->size-new_size;
+			LIST_INSERT_AFTER(&linkedListMemoryBlocks,cur_block,holder);
+		}
+		cur_block->size = new_size;
+		return va;
+	}
+
+	struct BlockMetaData *next_block  =LIST_NEXT(cur_block);
+
+	if(next_block->is_free&&next_block->size+cur_block->size+MetaDataSize()>=new_size){
+		cur_block->size+=next_block->size+MetaDataSize();
+		free_block(next_block);
+		LIST_REMOVE(&linkedListMemoryBlocks,next_block);
+		return va;
+	}
+
+	else {
+		void* new_address = allocate_FF(new_size);
+		void* new_data = new_address+MetaDataSize();
+		void* old_data = va+MetaDataSize();
+
+		for(;old_data!=next_block;old_data++,new_data++)
+			*new_data = *old_data;
+
+		free_block(va);
+		return new_address;
+	}
 	//TODO: [PROJECT'23.MS1 - #8] [3] DYNAMIC ALLOCATOR - realloc_block_FF()
-	panic("realloc_block_FF is not implemented yet");
-	return NULL;
+	//panic("realloc_block_FF is not implemented yet");
+	//return NULL;
 }
