@@ -8,6 +8,11 @@
 #include <inc/string.h>
 #include "../inc/dynamic_allocator.h"
 
+//==============DECLARE LIST TO HOLD META BLOCKS=====================//
+
+struct MemBlock_LIST linkedListMemoryBlocks;
+
+//===================================================================//
 
 //==================================================================================//
 //============================== GIVEN FUNCTIONS ===================================//
@@ -93,9 +98,14 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 		return ;
 	//=========================================
 	//=========================================
-
+	struct BlockMetaData *initializeDynamicBlock = (struct BlockMetaData *) daStart;
+	initializeDynamicBlock->is_free = 1;
+	initializeDynamicBlock->size = initSizeOfAllocatedSpace;
+	//intialize the list
+	LIST_INIT(&linkedListMemoryBlocks);
+	LIST_INSERT_HEAD(&linkedListMemoryBlocks, initializeDynamicBlock);
 	//TODO: [PROJECT'23.MS1 - #5] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator()
-	panic("initialize_dynamic_allocator is not implemented yet");
+	//panic("initialize_dynamic_allocator is not implemented yet");
 }
 
 //=========================================
