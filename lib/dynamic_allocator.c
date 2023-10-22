@@ -7,7 +7,9 @@
 #include <inc/assert.h>
 #include <inc/string.h>
 #include "../inc/dynamic_allocator.h"
-
+//for test
+#include <inc/stdio.h>
+//end test
 //==============DECLARE LIST TO HOLD META BLOCKS=====================//
 
 struct MemBlock_LIST linkedListMemoryBlocks;
@@ -86,7 +88,15 @@ void print_blocks_list(struct MemBlock_LIST list)
 //==================================================================================//
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
-
+//============================
+// Helper function to intinalize a metdatablock
+void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free){
+	struct BlockMetaData *intializeBlock = (struct BlockMetaData *) sAddress;
+	intializeBlock->is_free = free;
+	intializeBlock->size = size;
+	return intializeBlock;
+}
+//============================
 //==================================
 // [1] INITIALIZE DYNAMIC ALLOCATOR:
 //==================================
@@ -98,9 +108,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 		return ;
 	//=========================================
 	//=========================================
-	struct BlockMetaData *intializeDynamicBlock = (struct BlockMetaData *) daStart;
-	intializeDynamicBlock->is_free = 1;
-	intializeDynamicBlock->size = initSizeOfAllocatedSpace;
+	struct BlockMetaData *intializeDynamicBlock = (struct BlockMetaData *) initializeMetaDataBlock(daStart, initSizeOfAllocatedSpace, 1);
 	//intialize the list
 	LIST_INIT(&linkedListMemoryBlocks);
 	LIST_INSERT_HEAD(&linkedListMemoryBlocks, intializeDynamicBlock);
@@ -111,10 +119,62 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 //=========================================
 // [4] ALLOCATE BLOCK BY FIRST FIT:
 //=========================================
+
+
 void *alloc_block_FF(uint32 size)
 {
 	//TODO: [PROJECT'23.MS1 - #6] [3] DYNAMIC ALLOCATOR - alloc_block_FF()
-	panic("alloc_block_FF is not implemented yet");
+	if (size == 0)
+		return NULL;
+	struct BlockMetaData *currentBlock, *firstFitBlock;
+	uint32 totalRequiredSize = size + sizeOfMetaData();
+	int isFound = 0;
+	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
+		if (isFound == 0 && currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1){
+			isFound = 1;
+			firstFitBlock = currentBlock;
+		}
+	}
+	if (isFound){
+
+		struct BlockMetaData *prevElementToFreeFirstFitBlock =  LIST_PREV(firstFitBlock);
+		uint32 startOfAllocatedBlock = (uint32) firstFitBlock;
+		uint32 remainFreeSize = firstFitBlock->size - totalRequiredSize;
+		uint32 startOfFreeBlock = startOfAllocatedBlock + totalRequiredSize;
+		struct BlockMetaData *freeBlock,  *addedBlock;
+		freeBlock = NULL;
+		LIST_REMOVE(&linkedListMemoryBlocks, firstFitBlock);
+		// what if remain size is equal to metablock does it worth it ?
+		if (remainFreeSize >= sizeOfMetaData()){
+			freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
+		}
+		addedBlock =  (struct BlockMetaData *) initializeMetaDataBlock(startOfAllocatedBlock, totalRequiredSize, 0);
+		if (prevElementToFreeFirstFitBlock != NULL){
+			LIST_INSERT_AFTER(&linkedListMemoryBlocks, prevElementToFreeFirstFitBlock, addedBlock);
+		}else{
+			LIST_INSERT_HEAD(&linkedListMemoryBlocks, addedBlock);
+		}
+		if (freeBlock != NULL){
+			LIST_INSERT_AFTER(&linkedListMemoryBlocks, addedBlock, freeBlock);
+		}
+		uint32 blockStart = (uint32)addedBlock + (uint32)sizeOfMetaData();
+		return (void*) blockStart;
+	}else{
+		struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
+		if (tail->is_free){
+			uint32 neededSize = totalRequiredSize - tail->size;
+			if ((uint32)sbrk(neededSize) == -1) return NULL;
+			tail->size = totalRequiredSize;
+			tail->is_free = 0;
+			return tail;
+		}else{
+			void *oldSbrk = sbrk(0);
+			if ((uint32)sbrk(totalRequiredSize) == -1) return NULL;
+			struct BlockMetaData *addedBlock = (struct BlockMetaData *) initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
+			return addedBlock;
+		}
+	}
+	//panic("alloc_block_FF is not implemented yet");
 	return NULL;
 }
 //=========================================
