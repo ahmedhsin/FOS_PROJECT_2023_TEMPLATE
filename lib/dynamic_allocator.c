@@ -173,6 +173,7 @@ void *alloc_block_FF(uint32 size)
 			void *oldSbrk = sbrk(0);
 			if ((uint32)sbrk(totalRequiredSize) == -1) return NULL;
 			struct BlockMetaData *addedBlock = (struct BlockMetaData *) initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
+			LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
 			return addedBlock;
 		}
 	}
