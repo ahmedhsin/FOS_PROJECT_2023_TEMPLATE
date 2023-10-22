@@ -139,7 +139,7 @@ void *alloc_block_FF(uint32 size)
 	}
 	if (isFound){
 
-		uint32 remainFreeSize = firstFitBlock->size - totalRequiredSize;
+		uint32 remainFreeSize = firstFitBlock->size - size;
 		uint32 startOfFreeBlock = (uint32) firstFitBlock + totalRequiredSize;
 		struct BlockMetaData *freeBlock;
 		freeBlock = NULL;
