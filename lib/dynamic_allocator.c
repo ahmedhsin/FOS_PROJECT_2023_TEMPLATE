@@ -139,27 +139,19 @@ void *alloc_block_FF(uint32 size)
 	}
 	if (isFound){
 
-		struct BlockMetaData *prevElementToFreeFirstFitBlock =  LIST_PREV(firstFitBlock);
-		uint32 startOfAllocatedBlock = (uint32) firstFitBlock;
 		uint32 remainFreeSize = firstFitBlock->size - totalRequiredSize;
-		uint32 startOfFreeBlock = startOfAllocatedBlock + totalRequiredSize;
-		struct BlockMetaData *freeBlock,  *addedBlock;
+		uint32 startOfFreeBlock = (uint32) firstFitBlock + totalRequiredSize;
+		struct BlockMetaData *freeBlock;
 		freeBlock = NULL;
-		LIST_REMOVE(&linkedListMemoryBlocks, firstFitBlock);
 		// what if remain size is equal to metablock does it worth it ?
 		if (remainFreeSize >= sizeOfMetaData()){
 			freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
 		}
-		addedBlock =  (struct BlockMetaData *) initializeMetaDataBlock(startOfAllocatedBlock, totalRequiredSize, 0);
-		if (prevElementToFreeFirstFitBlock != NULL){
-			LIST_INSERT_AFTER(&linkedListMemoryBlocks, prevElementToFreeFirstFitBlock, addedBlock);
-		}else{
-			LIST_INSERT_HEAD(&linkedListMemoryBlocks, addedBlock);
-		}
-		if (freeBlock != NULL){
-			LIST_INSERT_AFTER(&linkedListMemoryBlocks, addedBlock, freeBlock);
-		}
-		uint32 blockStart = (uint32)addedBlock + (uint32)sizeOfMetaData();
+		firstFitBlock->size = totalRequiredSize;
+		firstFitBlock->is_free = 0;
+		if(freeBlock != NULL)
+			LIST_INSERT_AFTER(&linkedListMemoryBlocks, firstFitBlock, freeBlock);
+		uint32 blockStart = (uint32)firstFitBlock + (uint32)sizeOfMetaData();
 		return (void*) blockStart;
 	}else{
 		struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
