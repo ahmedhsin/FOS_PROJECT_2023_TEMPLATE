@@ -156,17 +156,17 @@ void *alloc_block_FF(uint32 size)
 	}else{
 		struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
 		if (tail->is_free){
-			uint32 neededSize = totalRequiredSize - tail->size;
+			uint32 neededSize = totalRequiredSize - tail->size + sizeOfMetaData();
 			if ((uint32)sbrk(neededSize) == -1) return NULL;
 			tail->size = totalRequiredSize;
 			tail->is_free = 0;
-			return tail;
+			return (void *) ((uint32) tail + (uint32) sizeOfMetaData());
 		}else{
 			void *oldSbrk = sbrk(0);
 			if ((uint32)sbrk(totalRequiredSize) == -1) return NULL;
 			struct BlockMetaData *addedBlock = (struct BlockMetaData *) initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
 			LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-			return addedBlock;
+			return (void *) ((uint32) addedBlock + (uint32) sizeOfMetaData());
 		}
 	}
 	//panic("alloc_block_FF is not implemented yet");
