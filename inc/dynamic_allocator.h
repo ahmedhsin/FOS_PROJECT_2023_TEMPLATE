@@ -59,5 +59,8 @@ void free_block(void* va);
 void *realloc_block_FF(void* va, uint32 new_size);
 //helper function
 void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free);
+void clearMetaDataBlock(void *sAddress);
+void printList();
+void printBlock (void * Address);
 
 #endif
