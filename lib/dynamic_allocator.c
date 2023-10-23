@@ -139,11 +139,10 @@ void *alloc_block_FF(uint32 size)
 	}
 	if (isFound){
 
-		uint32 remainFreeSize = firstFitBlock->size - size;
+		uint32 remainFreeSize = firstFitBlock->size - totalRequiredSize;
 		uint32 startOfFreeBlock = (uint32) firstFitBlock + totalRequiredSize;
 		struct BlockMetaData *freeBlock;
 		freeBlock = NULL;
-		// what if remain size is equal to metablock does it worth it ?
 		if (remainFreeSize >= sizeOfMetaData()){
 			freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
 		}
@@ -156,7 +155,7 @@ void *alloc_block_FF(uint32 size)
 	}else{
 		struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
 		if (tail->is_free){
-			uint32 neededSize = totalRequiredSize - tail->size + sizeOfMetaData();
+			uint32 neededSize = totalRequiredSize - tail->size;
 			if ((uint32)sbrk(neededSize) == -1) return NULL;
 			tail->size = totalRequiredSize;
 			tail->is_free = 0;
