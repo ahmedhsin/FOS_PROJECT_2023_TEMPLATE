@@ -7,9 +7,10 @@
 #include <inc/assert.h>
 #include <inc/string.h>
 #include "../inc/dynamic_allocator.h"
-//for test
+// for test
 #include <inc/stdio.h>
-//end test
+// end test
+
 //==============DECLARE LIST TO HOLD META BLOCKS=====================//
 
 struct MemBlock_LIST linkedListMemoryBlocks;
@@ -23,19 +24,19 @@ struct MemBlock_LIST linkedListMemoryBlocks;
 //=====================================================
 // 1) GET BLOCK SIZE (including size of its meta data):
 //=====================================================
-uint32 get_block_size(void* va)
+uint32 get_block_size(void *va)
 {
-	struct BlockMetaData *curBlkMetaData = ((struct BlockMetaData *)va - 1) ;
-	return curBlkMetaData->size ;
+	struct BlockMetaData *curBlkMetaData = ((struct BlockMetaData *)va - 1);
+	return curBlkMetaData->size;
 }
 
 //===========================
 // 2) GET BLOCK STATUS:
 //===========================
-int8 is_free_block(void* va)
+int8 is_free_block(void *va)
 {
-	struct BlockMetaData *curBlkMetaData = ((struct BlockMetaData *)va - 1) ;
-	return curBlkMetaData->is_free ;
+	struct BlockMetaData *curBlkMetaData = ((struct BlockMetaData *)va - 1);
+	return curBlkMetaData->is_free;
 }
 
 //===========================================
@@ -72,14 +73,13 @@ void *alloc_block(uint32 size, int ALLOC_STRATEGY)
 void print_blocks_list(struct MemBlock_LIST list)
 {
 	cprintf("=========================================\n");
-	struct BlockMetaData* blk ;
+	struct BlockMetaData *blk;
 	cprintf("\nDynAlloc Blocks List:\n");
 	LIST_FOREACH(blk, &list)
 	{
-		cprintf("(size: %d, isFree: %d)\n", blk->size, blk->is_free) ;
+		cprintf("(size: %d, isFree: %d)\n", blk->size, blk->is_free);
 	}
 	cprintf("=========================================\n");
-
 }
 //
 ////********************************************************************************//
@@ -89,13 +89,29 @@ void print_blocks_list(struct MemBlock_LIST list)
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
 //============================
-// Helper function to intinalize a metdatablock
-void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free){
-	struct BlockMetaData *intializeBlock = (struct BlockMetaData *) sAddress;
+// Helper functions
+void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free)
+{
+	struct BlockMetaData *intializeBlock = (struct BlockMetaData *)sAddress;
 	intializeBlock->is_free = free;
 	intializeBlock->size = size;
 	return intializeBlock;
 }
+void clearMetaDataBlock(void *sAddress)
+{
+	memset(sAddress, 0, sizeOfMetaData());
+}
+void printList(){
+	struct BlockMetaData *currentBlock;
+	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
+		cprintf("address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
+	}
+}
+void printBlock (void * Address){
+	struct BlockMetaData *currentBlock = (struct BlockMetaData *)Address;
+	cprintf("Block : address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
+}
+
 //============================
 //==================================
 // [1] INITIALIZE DYNAMIC ALLOCATOR:
@@ -103,19 +119,20 @@ void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free){
 void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpace)
 {
 	//=========================================
-	//DON'T CHANGE THESE LINES=================
+	// DON'T CHANGE THESE LINES=================
 	if (initSizeOfAllocatedSpace == 0)
-		return ;
+		return;
 	//=========================================
 	//=========================================
-	struct BlockMetaData *initializeDynamicBlock = (struct BlockMetaData *) daStart;
+	struct BlockMetaData *initializeDynamicBlock = (struct BlockMetaData *)daStart;
 	initializeDynamicBlock->is_free = 1;
 	initializeDynamicBlock->size = initSizeOfAllocatedSpace;
-	//intialize the list
+	// intialize the list
+	printBlock(initializeDynamicBlock);
 	LIST_INIT(&linkedListMemoryBlocks);
 	LIST_INSERT_HEAD(&linkedListMemoryBlocks, initializeDynamicBlock);
-	//TODO: [PROJECT'23.MS1 - #5] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator()
-	//panic("initialize_dynamic_allocator is not implemented yet");
+	// TODO: [PROJECT'23.MS1 - #5] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator()
+	// panic("initialize_dynamic_allocator is not implemented yet");
 }
 
 //=========================================
@@ -176,7 +193,7 @@ void *alloc_block_FF(uint32 size)
 //=========================================
 void *alloc_block_BF(uint32 size)
 {
-	//TODO: [PROJECT'23.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF()
+	// TODO: [PROJECT'23.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF()
 	panic("alloc_block_BF is not implemented yet");
 	return NULL;
 }
@@ -204,16 +221,36 @@ void *alloc_block_NF(uint32 size)
 //===================================================
 void free_block(void *va)
 {
-	//TODO: [PROJECT'23.MS1 - #7] [3] DYNAMIC ALLOCATOR - free_block()
-	panic("free_block is not implemented yet");
+	if (va == NULL)
+		return;
+	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)((uint32) va - (uint32) sizeOfMetaData());
+	struct BlockMetaData *next = (struct BlockMetaData *)LIST_NEXT(deAllocatedBlock);
+	struct BlockMetaData *prev = (struct BlockMetaData *)LIST_PREV(deAllocatedBlock);
+	uint32 isNextFree = next != NULL && next->is_free == 1;
+	uint32 isPrevFree = prev != NULL && prev->is_free == 1;
+
+	if (isNextFree == 1){
+		deAllocatedBlock->size += next->size;
+		LIST_REMOVE(&linkedListMemoryBlocks, next);
+		clearMetaDataBlock(next);
+		deAllocatedBlock->is_free = 1;
+	}if (isPrevFree == 1){
+		prev->size += deAllocatedBlock->size;
+		LIST_REMOVE(&linkedListMemoryBlocks, deAllocatedBlock);
+		clearMetaDataBlock(deAllocatedBlock);
+	}
+	if (isNextFree == 0 && isPrevFree == 0)
+		deAllocatedBlock->is_free = 1;
+	// TODO: [PROJECT'23.MS1 - #7] [3] DYNAMIC ALLOCATOR - free_block()
+	// panic("free_block is not implemented yet");
 }
 
 //=========================================
 // [4] REALLOCATE BLOCK BY FIRST FIT:
 //=========================================
-void *realloc_block_FF(void* va, uint32 new_size)
+void *realloc_block_FF(void *va, uint32 new_size)
 {
-	//TODO: [PROJECT'23.MS1 - #8] [3] DYNAMIC ALLOCATOR - realloc_block_FF()
+	// TODO: [PROJECT'23.MS1 - #8] [3] DYNAMIC ALLOCATOR - realloc_block_FF()
 	panic("realloc_block_FF is not implemented yet");
 	return NULL;
 }
