@@ -230,12 +230,12 @@ void free_block(void *va)
 	uint32 isPrevFree = prev != NULL && prev->is_free == 1;
 
 	if (isNextFree == 1){
-		deAllocatedBlock->size += next->size - sizeOfMetaData();
+		deAllocatedBlock->size += next->size;
 		LIST_REMOVE(&linkedListMemoryBlocks, next);
 		clearMetaDataBlock(next);
 		deAllocatedBlock->is_free = 1;
 	}if (isPrevFree == 1){
-		prev->size += deAllocatedBlock->size - sizeOfMetaData();
+		prev->size += deAllocatedBlock->size;
 		LIST_REMOVE(&linkedListMemoryBlocks, deAllocatedBlock);
 		clearMetaDataBlock(deAllocatedBlock);
 	}
