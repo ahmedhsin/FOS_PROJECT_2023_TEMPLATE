@@ -165,7 +165,7 @@ void *realloc_block_FF(void* va, uint32 new_size){
 		return va;
 
 	if(cur_block->size>new_size){
-		if(cur_block->size-new_size>=MetaDataSize()){
+		if(cur_block->size-new_size>=sizeOfMetaData()){
 			struct BlockMetaData* holder = (struct BlockMetaData*) (va+cur_block->size);
 			holder->size = cur_block->size-new_size;
 			LIST_INSERT_AFTER(&linkedListMemoryBlocks,cur_block,holder);
@@ -176,19 +176,19 @@ void *realloc_block_FF(void* va, uint32 new_size){
 
 	struct BlockMetaData *next_block  =LIST_NEXT(cur_block);
 
-	if(next_block->is_free&&next_block->size+cur_block->size+MetaDataSize()>=new_size){
-		cur_block->size+=next_block->size+MetaDataSize();
+	if(next_block->is_free&&next_block->size+cur_block->size+sizeOfMetaData()>=new_size){
+		cur_block->size+=next_block->size+sizeOfMetaData();
 		free_block(next_block);
 		LIST_REMOVE(&linkedListMemoryBlocks,next_block);
 		return va;
 	}
 
 	else {
-		void* new_address = allocate_FF(new_size);
-		void* new_data = new_address+MetaDataSize();
-		void* old_data = va+MetaDataSize();
+		void* new_address = alloc_block_FF(new_size);
+		uint32* new_data = new_address+sizeOfMetaData();
+		uint32* old_data = va+sizeOfMetaData();
 
-		for(;old_data!=next_block;old_data++,new_data++)
+		for(;old_data!=(uint32*)next_block;old_data++,new_data++)
 			*new_data = *old_data;
 
 		free_block(va);
