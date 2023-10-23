@@ -57,5 +57,7 @@ void *alloc_block_WF(uint32 size);
 void *alloc_block_NF(uint32 size);
 void free_block(void* va);
 void *realloc_block_FF(void* va, uint32 new_size);
+//helper function
+void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free);
 
 #endif
