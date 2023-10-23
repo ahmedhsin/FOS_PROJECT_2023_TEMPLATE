@@ -8,6 +8,7 @@
 #include <kern/trap/kdebug.h>
 #include <kern/cons/console.h>
 #include <kern/tests/tst_handler.h>
+#include <kern/tests/test_dynamic_allocator.h>
 #include "commands.h"
 
 // ********** This DosKey supported readline function is implemented by **********
@@ -273,7 +274,6 @@ void run_command_prompt()
 		// ********** 				Combined, edited and modified by TA\Ghada Hamed				**********
 		memset(command_line, 0, sizeof(command_line));
 		command_prompt_readline("FOS> ", command_line);
-
 		//parse and execute the command
 		if (command_line != NULL)
 			if (execute_command(command_line) < 0)
