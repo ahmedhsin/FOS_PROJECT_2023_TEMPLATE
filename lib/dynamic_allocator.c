@@ -10,6 +10,7 @@
 // for test
 #include <inc/stdio.h>
 // end test
+
 //==============DECLARE LIST TO HOLD META BLOCKS=====================//
 
 struct MemBlock_LIST linkedListMemoryBlocks;
@@ -110,6 +111,7 @@ void printBlock (void * Address){
 	struct BlockMetaData *currentBlock = (struct BlockMetaData *)Address;
 	cprintf("Block : address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
 }
+
 //============================
 //==================================
 // [1] INITIALIZE DYNAMIC ALLOCATOR:
@@ -136,6 +138,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 //=========================================
 // [4] ALLOCATE BLOCK BY FIRST FIT:
 //=========================================
+
 
 void *alloc_block_FF(uint32 size)
 {

@@ -2,7 +2,6 @@
 // controlling the kernel and exploring the system interactively.
 
 
-
 #include <kern/cmd/command_prompt.h>
 
 #include <kern/proc/user_environment.h>
