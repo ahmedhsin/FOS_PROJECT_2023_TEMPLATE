@@ -100,6 +100,16 @@ void clearMetaDataBlock(void *sAddress)
 {
 	memset(sAddress, 0, sizeOfMetaData());
 }
+void printList(){
+	struct BlockMetaData *currentBlock;
+	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
+		cprintf("address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
+	}
+}
+void printBlock (void * Address){
+	struct BlockMetaData *currentBlock = (struct BlockMetaData *)Address;
+	cprintf("Block : address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
+}
 //============================
 //==================================
 // [1] INITIALIZE DYNAMIC ALLOCATOR:
@@ -116,6 +126,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	initializeDynamicBlock->is_free = 1;
 	initializeDynamicBlock->size = initSizeOfAllocatedSpace;
 	// intialize the list
+	printBlock(initializeDynamicBlock);
 	LIST_INIT(&linkedListMemoryBlocks);
 	LIST_INSERT_HEAD(&linkedListMemoryBlocks, initializeDynamicBlock);
 	// TODO: [PROJECT'23.MS1 - #5] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator()
@@ -128,74 +139,50 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 
 void *alloc_block_FF(uint32 size)
 {
-	// TODO: [PROJECT'23.MS1 - #6] [3] DYNAMIC ALLOCATOR - alloc_block_FF()
+	//TODO: [PROJECT'23.MS1 - #6] [3] DYNAMIC ALLOCATOR - alloc_block_FF()
 	if (size == 0)
 		return NULL;
 	struct BlockMetaData *currentBlock, *firstFitBlock;
 	uint32 totalRequiredSize = size + sizeOfMetaData();
 	int isFound = 0;
-	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks)
-	{
-		if (isFound == 0 && currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1)
-		{
+	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
+		if (isFound == 0 && currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1){
 			isFound = 1;
 			firstFitBlock = currentBlock;
 		}
 	}
-	if (isFound)
-	{
+	if (isFound){
 
-		struct BlockMetaData *prevElementToFreeFirstFitBlock = LIST_PREV(firstFitBlock);
-		uint32 startOfAllocatedBlock = (uint32)firstFitBlock;
 		uint32 remainFreeSize = firstFitBlock->size - totalRequiredSize;
-		uint32 startOfFreeBlock = startOfAllocatedBlock + totalRequiredSize;
-		struct BlockMetaData *freeBlock, *addedBlock;
+		uint32 startOfFreeBlock = (uint32) firstFitBlock + totalRequiredSize;
+		struct BlockMetaData *freeBlock;
 		freeBlock = NULL;
-		LIST_REMOVE(&linkedListMemoryBlocks, firstFitBlock);
-		// what if remain size is equal to metablock does it worth it ?
-		if (remainFreeSize >= sizeOfMetaData())
-		{
-			freeBlock = (struct BlockMetaData *)initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
+		if (remainFreeSize >= sizeOfMetaData()){
+			freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
 		}
-		addedBlock = (struct BlockMetaData *)initializeMetaDataBlock(startOfAllocatedBlock, totalRequiredSize, 0);
-		if (prevElementToFreeFirstFitBlock != NULL)
-		{
-			LIST_INSERT_AFTER(&linkedListMemoryBlocks, prevElementToFreeFirstFitBlock, addedBlock);
-		}
-		else
-		{
-			LIST_INSERT_HEAD(&linkedListMemoryBlocks, addedBlock);
-		}
-		if (freeBlock != NULL)
-		{
-			LIST_INSERT_AFTER(&linkedListMemoryBlocks, addedBlock, freeBlock);
-		}
-		uint32 blockStart = (uint32)addedBlock + (uint32)sizeOfMetaData();
-		return (void *)blockStart;
-	}
-	else
-	{
+		firstFitBlock->size = totalRequiredSize;
+		firstFitBlock->is_free = 0;
+		if(freeBlock != NULL)
+			LIST_INSERT_AFTER(&linkedListMemoryBlocks, firstFitBlock, freeBlock);
+		uint32 blockStart = (uint32)firstFitBlock + (uint32)sizeOfMetaData();
+		return (void*) blockStart;
+	}else{
 		struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
-		if (tail->is_free)
-		{
+		if (tail->is_free){
 			uint32 neededSize = totalRequiredSize - tail->size;
-			if ((uint32)sbrk(neededSize) == -1)
-				return NULL;
+			if ((uint32)sbrk(neededSize) == -1) return NULL;
 			tail->size = totalRequiredSize;
 			tail->is_free = 0;
-			return tail;
-		}
-		else
-		{
+			return (void *) ((uint32) tail + (uint32) sizeOfMetaData());
+		}else{
 			void *oldSbrk = sbrk(0);
-			if ((uint32)sbrk(totalRequiredSize) == -1)
-				return NULL;
-			struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
+			if ((uint32)sbrk(totalRequiredSize) == -1) return NULL;
+			struct BlockMetaData *addedBlock = (struct BlockMetaData *) initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
 			LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-			return addedBlock;
+			return (void *) ((uint32) addedBlock + (uint32) sizeOfMetaData());
 		}
 	}
-	// panic("alloc_block_FF is not implemented yet");
+	//panic("alloc_block_FF is not implemented yet");
 	return NULL;
 }
 //=========================================
@@ -231,17 +218,10 @@ void *alloc_block_NF(uint32 size)
 //===================================================
 void free_block(void *va)
 {
-	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)va;
-	if (deAllocatedBlock == NULL)
+	if (va == NULL)
 		return;
-	/*
-	uint32 allSize = deAllocatedBlock->size + prev->size + next->size - 2 * sizeOfMetaData();
-	LIST_REMOVE(&linkedListMemoryBlocks, deAllocatedBlock);
-	LIST_REMOVE(&linkedListMemoryBlocks, next);
-	clearMetaDataBlock(deAllocatedBlock);
-	clearMetaDataBlock(next);
-	prev->size = allSize;
-	*/
+	uint32 actualAdd = (uint32) va - (uint32) sizeOfMetaData();
+	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)actualAdd;
 	struct BlockMetaData *next = (struct BlockMetaData *)LIST_NEXT(deAllocatedBlock);
 	struct BlockMetaData *prev = (struct BlockMetaData *)LIST_PREV(deAllocatedBlock);
 	uint32 isNextFree = 0, isPrevFree = 0;
@@ -260,12 +240,14 @@ void free_block(void *va)
 		deAllocatedBlock->size += next->size - sizeOfMetaData();
 		LIST_REMOVE(&linkedListMemoryBlocks, next);
 		clearMetaDataBlock(next);
+		deAllocatedBlock->is_free = 1;
 	}else if (isPrevFree == 1){
 		prev->size += deAllocatedBlock->size - sizeOfMetaData();
 		LIST_REMOVE(&linkedListMemoryBlocks, deAllocatedBlock);
 		clearMetaDataBlock(deAllocatedBlock);
+	}else{
+		deAllocatedBlock->is_free = 1;
 	}
-	deAllocatedBlock->is_free = 1;
 	// TODO: [PROJECT'23.MS1 - #7] [3] DYNAMIC ALLOCATOR - free_block()
 	// panic("free_block is not implemented yet");
 }
