@@ -380,8 +380,8 @@ int process_command(int number_of_arguments, char** arguments)
 	//Comment the following line before start coding...
 
 	 int i=0 ;
-	 LIST_SIZE(&foundCommands) = 0;
-	 struct Command *cmd= commands[0];
+	 LIST_INIT(&foundCommands);
+	 struct Command *cmd = &commands[0];
 	 //loop
 	while(cmd != NULL ){
 	   if (commands->name == arguments[0]  ){
@@ -393,7 +393,7 @@ int process_command(int number_of_arguments, char** arguments)
 
         	  LIST_FOREACH(cmd , &foundCommands){
 
-        	  			foundCommands[i]= *cmd;
+        	  			foundCommands[i] = cmd;
         	  			i++;
         	  		}
 
@@ -402,25 +402,35 @@ int process_command(int number_of_arguments, char** arguments)
         	 //fill the list with the commands --must check if array contains another
          }
 
-	   }else {
-		 int i,j;
+	 }else {
+		int i, j;
 
+		if (isSubSeq( commands->name[i] , arguments[0][j])){
 
-
-	   while (arguments[0][j] != NULL){
-         if ( commands->name[i] == arguments[0][j]){
-	        j++;
-
-             }
-
-	       i++;
-          }
-
+			   LIST_FOREACH(cmd , &foundCommands){
+			      foundCommands[i]= cmd ;
+			          i++;
+			  }
+		   }
 	   }
 
-	 // return CMD_INVALID;
+
 	  cmd ++;
 	}
 
 	return CMD_INVALID;
+}
+uint32 isSubSeq(char *s1, char *s2){
+       int i , j ;
+
+      while ( s1[j] != NULL){
+	     if ( s2[i]==s1[j]){
+		        j++;
+          return 1;
+
+	     }
+      i++;
+      return 0;
+
+	}
 }
