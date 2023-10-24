@@ -378,18 +378,49 @@ int process_command(int number_of_arguments, char** arguments)
 {
 	//TODO: [PROJECT'23.MS1 - #2] [1] PLAY WITH CODE! - process_command
 	//Comment the following line before start coding...
-	//panic("process_command is not implemented yet");
 
-	if (commands->name == arguments[0] && commands->num_of_args ==number_of_arguments ){
+	 int i=0 ;
+	 LIST_SIZE(&foundCommands) = 0;
+	 struct Command *cmd= commands[0];
+	 //loop
+	while(cmd != NULL ){
+	   if (commands->name == arguments[0]  ){
+         if ( commands->num_of_args == number_of_arguments ){
+        	return cmd ;
+
+        	 //return index of the found command
+         }else {
+
+        	  LIST_FOREACH(cmd , &foundCommands){
+
+        	  			foundCommands[i]= *cmd;
+        	  			i++;
+        	  		}
+
+        	 return CMD_INV_NUM_ARGS;
+
+        	 //fill the list with the commands --must check if array contains another
+         }
+
+	   }else {
+		 int i,j;
 
 
-		return 0;
-	}else if ( ) {
 
-		LI
+	   while (arguments[0][j] != NULL){
+         if ( commands->name[i] == arguments[0][j]){
+	        j++;
 
+             }
 
+	       i++;
+          }
+
+	   }
+
+	 // return CMD_INVALID;
+	  cmd ++;
 	}
 
-	return 0;
+	return CMD_INVALID;
 }
