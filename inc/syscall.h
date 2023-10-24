@@ -55,7 +55,10 @@ enum
 	//TODO: [PROJECT'23.MS1 - #3] [2] SYSTEM CALLS - Add suitable code here
 
 	//=====================================================================
-	NSYSCALLS
+	NSYSCALLS,
+	SYS_sbrk,
+	SYS_allocate_user_mem,
+	SYS_free_user_mem
 };
 
 #endif /* !FOS_INC_SYSCALL_H */
