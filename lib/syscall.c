@@ -1,7 +1,9 @@
 // System call stubs.
 
+
 #include <inc/syscall.h>
 #include <inc/lib.h>
+
 
 static inline uint32
 syscall(int num, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uint32 a5)
@@ -346,6 +348,7 @@ void* sys_sbrk(int increment)
 void sys_free_user_mem(uint32 virtual_address, uint32 size)
 {
 	//Comment the following line before start coding...
+
 	syscall(SYS_free_user_mem ,virtual_address, size ,  0  ,0 ,0 );
 	return ;
 	//panic("not implemented yet");
@@ -354,18 +357,9 @@ void sys_free_user_mem(uint32 virtual_address, uint32 size)
 void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 {
 	//Comment the following line before start coding...
+
 	syscall(SYS_allocate_user_mem ,virtual_address, size ,  0  ,0 ,0);
 	return ;
 	//panic("not implemented yet");
 }
 
-
-uint32 Params_Validation(uint32 virtual_address ){
-
-	char*ptr = virtual_address;
-	if (ptr == NULL || ptr == USER_LIMIT){
-
-		sched_kill_env(curenv->env_id);
-
-	 }
-}
