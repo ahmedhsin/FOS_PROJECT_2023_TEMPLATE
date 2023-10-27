@@ -409,18 +409,15 @@ int process_command(int number_of_arguments, char **arguments)
 	return CMD_INVALID;
 }
 
+
 uint32 isSubSeq(char *s1, char *s2)
 {
-	uint32 i = 0;
-
-	while (s1[i])
-	{
-		char *tmp = s2;
-		s2 = (char *)strfind(s2, s1[i]);
-		if (tmp == s2) s2++;
-		if (!*s2)
-			return 0;
-		i++;
+	for(; *s1 && *s2; s2++){
+		if (*s1 == *s2){
+			s1++;
+		}
 	}
-	return 1;
+	if (!*s1)
+		return 1;
+	return 0;
 }
