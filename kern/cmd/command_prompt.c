@@ -373,11 +373,51 @@ int execute_command(char *command_string)
 	return 0;
 }
 
-
-int process_command(int number_of_arguments, char** arguments)
+int process_command(int number_of_arguments, char **arguments)
 {
-	//TODO: [PROJECT'23.MS1 - #2] [1] PLAY WITH CODE! - process_command
-	//Comment the following line before start coding...
-	panic("process_command is not implemented yet");
+	// TODO: [PROJECT'23.MS1 - #2] [1] PLAY WITH CODE! - process_command
+	// Comment the following line before start coding...
+
+	int i = 0;
+	LIST_INIT(&foundCommands);
+	// loop
+	while (i < NUM_OF_COMMANDS)
+	{
+		if (strcmp(commands[i].name, arguments[0]) == 0)
+		{
+			if (commands[i].num_of_args == number_of_arguments - 1 || commands[i].num_of_args == -1)
+			{
+				LIST_INIT(&foundCommands);
+				return i;
+				// return index of the found command
+			}
+			else
+			{
+				LIST_INIT(&foundCommands);
+				LIST_INSERT_HEAD(&foundCommands, &commands[i]);
+				return CMD_INV_NUM_ARGS;
+				// fill the list with the commands --must check if array contains another
+			}
+		}
+		if (isSubSeq(arguments[0], commands[i].name)){
+			LIST_INSERT_TAIL(&foundCommands, &commands[i]);
+		}
+		i++;
+	}
+	if (foundCommands.size > 0)
+		return CMD_MATCHED;
+	return CMD_INVALID;
+}
+
+
+uint32 isSubSeq(char *s1, char *s2)
+{
+	for(; *s1 && *s2; s2++){
+		if (*s1 == *s2){
+			s1++;
+		}
+	}
+	if (!*s1)
+		return 1;
 	return 0;
 }

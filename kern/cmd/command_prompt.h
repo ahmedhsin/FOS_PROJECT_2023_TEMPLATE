@@ -33,6 +33,6 @@ void command_prompt_readline(const char *, char *);
 
 /*2024*/
 int process_command(int number_of_arguments, char** arguments);
-
+uint32 isSubSeq(char *s1, char *s2);
 
 #endif	// !FOS_KERN_MONITOR_H
