@@ -359,3 +359,13 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 	//panic("not implemented yet");
 }
 
+
+uint32 Params_Validation(uint32 virtual_address ){
+
+	char*ptr = virtual_address;
+	if (ptr == NULL || ptr == USER_LIMIT){
+
+		sched_kill_env(curenv->env_id);
+
+	 }
+}
