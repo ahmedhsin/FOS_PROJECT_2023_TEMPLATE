@@ -210,6 +210,74 @@ void *alloc_block_FF(uint32 size)
 void *alloc_block_BF(uint32 size)
 {
 	// TODO: [PROJECT'23.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF()
+    if (size == 0)
+        return NULL;
+
+    struct BlockMetaData *currentBlock, *bestFitBlock = NULL;
+    uint32 totalRequiredSize = size + sizeOfMetaData();
+    uint32 minFreeSize = 4294967295;
+
+    LIST_FOREACH(currentBlock, &linkedListMemoryBlocks)
+    {
+        if (currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1)
+        {
+            if (currentBlock->size < minFreeSize)
+            {
+                minFreeSize = currentBlock->size;
+                bestFitBlock = currentBlock;
+            }
+        }
+    }
+
+    if (bestFitBlock)
+    {
+        uint32 remainFreeSize = bestFitBlock->size - totalRequiredSize;
+        uint32 startOfFreeBlock = (uint32)bestFitBlock + totalRequiredSize;
+        struct BlockMetaData *freeBlock = NULL;
+
+        if (remainFreeSize >= sizeOfMetaData())
+        {
+            freeBlock = (struct BlockMetaData *)initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
+        }
+
+        bestFitBlock->size = totalRequiredSize;
+        bestFitBlock->is_free = 0;
+
+        if (freeBlock != NULL)
+            LIST_INSERT_AFTER(&linkedListMemoryBlocks, bestFitBlock, freeBlock);
+
+        uint32 blockStart = (uint32)bestFitBlock + (uint32)sizeOfMetaData();
+        return (void *)blockStart;
+    }
+    else
+    {
+        struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
+
+        if (tail->is_free)
+        {
+            uint32 neededSize = totalRequiredSize - tail->size;
+
+            if ((uint32)sbrk(neededSize) == -1)
+                return NULL;
+
+            tail->size = totalRequiredSize;
+            tail->is_free = 0;
+
+            return (void *)((uint32)tail + (uint32)sizeOfMetaData());
+        }
+        else
+        {
+            void *oldSbrk = sbrk(0);
+
+            if ((uint32)sbrk(totalRequiredSize) == -1)
+                return NULL;
+
+            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
+            LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
+
+            return (void *)((uint32)addedBlock + (uint32)sizeOfMetaData());
+        }
+    }
 	panic("alloc_block_BF is not implemented yet");
 	return NULL;
 }
