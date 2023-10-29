@@ -127,6 +127,47 @@ void coalesce(void* va){
 	clearMetaDataBlock(blk2);
 }
 
+void alloc(void* va, uint32 size){
+	struct BlockMetaData* blk = (struct BlockMetaData*) va;
+	blk->is_free = 0;
+	uint32 remainFreeSize = blk->size - size;
+	uint32 startOfFreeBlock = (uint32) blk + size;
+	if (remainFreeSize >= sizeOfMetaData()){
+		struct BlockMetaData *freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
+		blk->size = size;
+		LIST_INSERT_AFTER(&linkedListMemoryBlocks, blk, freeBlock);
+	}
+}
+
+void* new_block(uint32 size){
+	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
+
+	        if (tail->is_free)
+	        {
+	            uint32 neededSize = size - tail->size;
+
+	            if ((uint32)sbrk(neededSize) == -1)
+	                return NULL;
+
+	            tail->size = size;
+	            tail->is_free = 0;
+
+	            return (void *)((uint32)tail + (uint32)sizeOfMetaData());
+	        }
+	        else
+	        {
+	            void *oldSbrk = sbrk(0);
+
+	            if ((uint32)sbrk(size) == -1)
+	                return NULL;
+
+	            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk, size, 0);
+	            LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
+
+	            return (void *)((uint32)addedBlock + (uint32)sizeOfMetaData());
+	        }
+}
+
 //============================
 //==================================
 // [1] INITIALIZE DYNAMIC ALLOCATOR:
@@ -171,37 +212,13 @@ void *alloc_block_FF(uint32 size)
 		}
 	}
 	if (isFound){
-
-		uint32 remainFreeSize = firstFitBlock->size - totalRequiredSize;
-		uint32 startOfFreeBlock = (uint32) firstFitBlock + totalRequiredSize;
-		struct BlockMetaData *freeBlock;
-		freeBlock = NULL;
-		if (remainFreeSize >= sizeOfMetaData()){
-			freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
-		}
-		firstFitBlock->size = totalRequiredSize;
-		firstFitBlock->is_free = 0;
-		if(freeBlock != NULL)
-			LIST_INSERT_AFTER(&linkedListMemoryBlocks, firstFitBlock, freeBlock);
+		alloc(firstFitBlock,totalRequiredSize);
 		uint32 blockStart = (uint32)firstFitBlock + (uint32)sizeOfMetaData();
 		return (void*) blockStart;
-	}else{
-		struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
-		if (tail->is_free){
-			uint32 neededSize = totalRequiredSize - tail->size;
-			if ((uint32)sbrk(neededSize) == -1) return NULL;
-			tail->size = totalRequiredSize;
-			tail->is_free = 0;
-			return (void *) ((uint32) tail + (uint32) sizeOfMetaData());
-		}else{
-			void *oldSbrk = sbrk(0);
-			if ((uint32)sbrk(totalRequiredSize) == -1) return NULL;
-			struct BlockMetaData *addedBlock = (struct BlockMetaData *) initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
-			LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-			return (void *) ((uint32) addedBlock + (uint32) sizeOfMetaData());
-		}
 	}
-	//panic("alloc_block_FF is not implemented yet");
+	else
+		return new_block(totalRequiredSize);
+//panic("alloc_block_FF is not implemented yet");
 	return NULL;
 }
 //=========================================
@@ -231,53 +248,13 @@ void *alloc_block_BF(uint32 size)
 
     if (bestFitBlock)
     {
-        uint32 remainFreeSize = bestFitBlock->size - totalRequiredSize;
-        uint32 startOfFreeBlock = (uint32)bestFitBlock + totalRequiredSize;
-        struct BlockMetaData *freeBlock = NULL;
-
-        if (remainFreeSize >= sizeOfMetaData())
-        {
-            freeBlock = (struct BlockMetaData *)initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
-        }
-
-        bestFitBlock->size = totalRequiredSize;
-        bestFitBlock->is_free = 0;
-
-        if (freeBlock != NULL)
-            LIST_INSERT_AFTER(&linkedListMemoryBlocks, bestFitBlock, freeBlock);
-
+    	alloc(bestFitBlock,totalRequiredSize);
         uint32 blockStart = (uint32)bestFitBlock + (uint32)sizeOfMetaData();
         return (void *)blockStart;
     }
     else
-    {
-        struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
+    	return new_block(totalRequiredSize);
 
-        if (tail->is_free)
-        {
-            uint32 neededSize = totalRequiredSize - tail->size;
-
-            if ((uint32)sbrk(neededSize) == -1)
-                return NULL;
-
-            tail->size = totalRequiredSize;
-            tail->is_free = 0;
-
-            return (void *)((uint32)tail + (uint32)sizeOfMetaData());
-        }
-        else
-        {
-            void *oldSbrk = sbrk(0);
-
-            if ((uint32)sbrk(totalRequiredSize) == -1)
-                return NULL;
-
-            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk, totalRequiredSize, 0);
-            LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-
-            return (void *)((uint32)addedBlock + (uint32)sizeOfMetaData());
-        }
-    }
 	panic("alloc_block_BF is not implemented yet");
 	return NULL;
 }
@@ -345,8 +322,9 @@ void *realloc_block_FF(void* va, uint32 new_size){
 			holder->is_free = 0;
 			LIST_INSERT_AFTER(&linkedListMemoryBlocks,cur_block,holder);
 			free_block(holder+1);
-		}
+
 		cur_block->size = real_size;
+		}
 		return va;
 	}
 
