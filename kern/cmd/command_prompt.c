@@ -274,6 +274,7 @@ void run_command_prompt()
 		// ********** 				Combined, edited and modified by TA\Ghada Hamed				**********
 		memset(command_line, 0, sizeof(command_line));
 		command_prompt_readline("FOS> ", command_line);
+
 		//parse and execute the command
 		if (command_line != NULL)
 			if (execute_command(command_line) < 0)
@@ -377,7 +378,8 @@ int process_command(int number_of_arguments, char **arguments)
 {
 	// TODO: [PROJECT'23.MS1 - #2] [1] PLAY WITH CODE! - process_command
 	// Comment the following line before start coding...
-
+	for(int i = 0; i<number_of_arguments;i++)
+		str2lower(arguments[i],arguments[i]);
 	int i = 0;
 	LIST_INIT(&foundCommands);
 	// loop
