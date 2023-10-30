@@ -378,8 +378,6 @@ int process_command(int number_of_arguments, char **arguments)
 {
 	// TODO: [PROJECT'23.MS1 - #2] [1] PLAY WITH CODE! - process_command
 	// Comment the following line before start coding...
-	for(int i = 0; i<number_of_arguments;i++)
-		str2lower(arguments[i],arguments[i]);
 	int i = 0;
 	LIST_INIT(&foundCommands);
 	// loop
@@ -387,6 +385,7 @@ int process_command(int number_of_arguments, char **arguments)
 	{
 		if (strcmp(commands[i].name, arguments[0]) == 0)
 		{
+
 			if (commands[i].num_of_args == number_of_arguments - 1 || commands[i].num_of_args == -1)
 			{
 				LIST_INIT(&foundCommands);
