@@ -16,7 +16,7 @@
 struct MemBlock_LIST linkedListMemoryBlocks;
 
 //===================================================================//
-
+bool is_initialized = 0;
 //==================================================================================//
 //============================== GIVEN FUNCTIONS ===================================//
 //==================================================================================//
@@ -132,7 +132,7 @@ void alloc(void* va, uint32 size){
 	blk->is_free = 0;
 	uint32 remainFreeSize = blk->size - size;
 	uint32 startOfFreeBlock = (uint32) blk + size;
-	if (remainFreeSize >= sizeOfMetaData()){
+	if (remainFreeSize > sizeOfMetaData()){
 		struct BlockMetaData *freeBlock = (struct BlockMetaData *) initializeMetaDataBlock(startOfFreeBlock, remainFreeSize, 1);
 		blk->size = size;
 		LIST_INSERT_AFTER(&linkedListMemoryBlocks, blk, freeBlock);
@@ -180,6 +180,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 		return;
 	//=========================================
 	//=========================================
+	is_initialized = 1;
 	struct BlockMetaData *initializeDynamicBlock = (struct BlockMetaData *)daStart;
 	initializeDynamicBlock->is_free = 1;
 	initializeDynamicBlock->size = initSizeOfAllocatedSpace;
@@ -202,6 +203,15 @@ void *alloc_block_FF(uint32 size)
 	//TODO: [PROJECT'23.MS1 - #6] [3] DYNAMIC ALLOCATOR - alloc_block_FF()
 	if (size == 0)
 		return NULL;
+	if (!is_initialized)
+	{
+	uint32 required_size = size + sizeOfMetaData();
+	uint32 da_start = (uint32)sbrk(required_size);
+	//get new break since it's page aligned! thus, the size can be more than the required one
+	uint32 da_break = (uint32)sbrk(0);
+	initialize_dynamic_allocator(da_start, da_break - da_start);
+	}
+
 	struct BlockMetaData *currentBlock, *firstFitBlock;
 	uint32 totalRequiredSize = size + sizeOfMetaData();
 	int isFound = 0;
@@ -316,7 +326,7 @@ void *realloc_block_FF(void* va, uint32 new_size){
 		return va;
 
 	if(cur_block->size>real_size){
-		if(cur_block->size-real_size>=sizeOfMetaData()){
+		if(cur_block->size-real_size>sizeOfMetaData()){
 			struct BlockMetaData* holder = (struct BlockMetaData*) (blk_add+real_size);
 			holder->size = cur_block->size-real_size;
 			holder->is_free = 0;
