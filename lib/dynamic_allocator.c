@@ -186,7 +186,6 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	initializeDynamicBlock->size = initSizeOfAllocatedSpace;
 
 	// intialize the list
-	printBlock(initializeDynamicBlock);
 	LIST_INIT(&linkedListMemoryBlocks);
 	LIST_INSERT_HEAD(&linkedListMemoryBlocks, initializeDynamicBlock);
 	// TODO: [PROJECT'23.MS1 - #5] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator()
