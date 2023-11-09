@@ -7,7 +7,6 @@
 
 #include <inc/types.h>
 
-
 /*2017*/
 uint32 _KHeapPlacementStrategy;
 //Values for user heap placement strategy
@@ -43,7 +42,9 @@ int numOfKheapVACalls ;
 
 /*2023*/
 //TODO: [PROJECT'23.MS2 - #01] [1] KERNEL HEAP - initialization: add suitable code here
-
+uint32 startBlock;
+uint32 blockSbrk;
+uint32 blockHardLimit;
 //====================================================================================
 
 #endif // FOS_KERN_KHEAP_H_

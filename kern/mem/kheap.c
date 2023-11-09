@@ -14,9 +14,19 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	//Return:
 	//	On success: 0
 	//	Otherwise (if no memory OR initial size exceed the given limit): E_NO_MEM
+	startBlock = daStart;
+	blockSbrk = initSizeToAllocate + daStart;
+	blockHardLimit = daLimit;
+	for (uint32 current = ROUNDDOWN(KERNEL_HEAP_START, PAGE_SIZE); current < ROUNDUP(KERNEL_HEAP_MAX, PAGE_SIZE); current += PAGE_SIZE){
+		struct FrameInfo *fr = NULL;
+		allocate_frame(&fr);
+		if (fr == NULL) return E_NO_MEM;
+		map_frame(ptr_page_directory, fr, current, PERM_WRITEABLE);
+	}
+	initialize_dynamic_allocator(daStart, initSizeToAllocate);
 
 	//Comment the following line(s) before start coding...
-	panic("not implemented yet");
+	//panic("not implemented yet");
 	return 0;
 }
 
