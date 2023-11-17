@@ -45,6 +45,7 @@ int numOfKheapVACalls ;
 uint32 startBlock;
 uint32 blockSbrk;
 uint32 blockHardLimit;
+uint32 KheapStart;
 //====================================================================================
 
 #endif // FOS_KERN_KHEAP_H_

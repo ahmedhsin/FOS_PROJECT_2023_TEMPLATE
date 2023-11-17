@@ -17,6 +17,8 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	startBlock = ROUNDDOWN(daStart, PAGE_SIZE);
 	blockSbrk = ROUNDUP(initSizeToAllocate + daStart, PAGE_SIZE);
 	blockHardLimit = ROUNDUP(daLimit, PAGE_SIZE);
+	KheapStart = blockHardLimit + PAGE_SIZE;
+
 	if (blockSbrk > blockHardLimit) return E_NO_MEM;
 	for (uint32 current = startBlock; current < blockSbrk; current += PAGE_SIZE){
 		struct FrameInfo *fr = NULL;
@@ -60,9 +62,40 @@ void* kmalloc(unsigned int size)
 	//TODO: [PROJECT'23.MS2 - #03] [1] KERNEL HEAP - kmalloc()
 	//refer to the project presentation and documentation for details
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
-
+	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
+		return alloc_block_FF(size);
+	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
+	int maxPages = 0;
+	uint32 startPages = 0;
+	struct FrameInfo *frame = NULL;
+	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
+		
+		uint32 *pgTable = NULL;
+		frame = get_frame_info(ptr_page_directory, currentAddress, &pgTable);
+		if (frame != 0){
+			maxPages = 0;
+			startPages = 0;
+		}else{
+			maxPages++;
+			if (startPages == 0) startPages = currentAddress;
+		}
+		if (maxPages >= requiredPages) break;
+	}
+	if (maxPages >= requiredPages)
+	{
+		uint32 pagesHead = startPages;
+		while (requiredPages--)
+		{
+			allocate_frame(&frame);
+			if (frame == NULL)
+				return NULL;
+			map_frame(ptr_page_directory, frame, pagesHead, PERM_WRITEABLE);
+			pagesHead += PAGE_SIZE;
+		}
+		return (void *)startPages;
+	}
 	//change this "return" according to your answer
-	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 	return NULL;
 }
 
