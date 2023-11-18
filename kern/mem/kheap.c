@@ -45,7 +45,7 @@ void* sbrk(int increment)
 	if(increment%PAGE_SIZE){
 		if(increment>0)
 			increment += PAGE_SIZE-increment%PAGE_SIZE;
-		else increment -= PAGE_SIZE+increment%PAGE_SIZE;
+		else increment -= increment%PAGE_SIZE;
 	}
 	uint32 new_block = blockSbrk+increment;
 	if(new_block>blockHardLimit||new_block<startBlock)
