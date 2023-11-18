@@ -4,6 +4,14 @@
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
 
+int mall(uint32 va){
+	struct FrameInfo *fr = NULL;
+	allocate_frame(&fr);
+	if (fr == NULL) return E_NO_MEM;
+	map_frame(ptr_page_directory, fr, va, PERM_WRITEABLE);
+	return 0;
+}
+
 
 int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate, uint32 daLimit)
 {
@@ -17,12 +25,10 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	startBlock = daStart;
 	blockSbrk = initSizeToAllocate + daStart;
 	blockHardLimit = daLimit;
-	for (uint32 current = ROUNDDOWN(KERNEL_HEAP_START, PAGE_SIZE); current < ROUNDUP(KERNEL_HEAP_MAX, PAGE_SIZE); current += PAGE_SIZE){
-		struct FrameInfo *fr = NULL;
-		allocate_frame(&fr);
-		if (fr == NULL) return E_NO_MEM;
-		map_frame(ptr_page_directory, fr, current, PERM_WRITEABLE);
-	}
+	for (uint32 current = ROUNDDOWN(KERNEL_HEAP_START, PAGE_SIZE); current < ROUNDUP(KERNEL_HEAP_MAX, PAGE_SIZE); current += PAGE_SIZE)
+		if(mall(current)==E_NO_MEM)
+			return E_NO_MEM;
+
 	initialize_dynamic_allocator(daStart, initSizeToAllocate);
 
 	//Comment the following line(s) before start coding...
@@ -32,6 +38,31 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int increment)
 {
+	cprintf("%d",increment);
+	if(!increment)
+		return (void*)blockSbrk;
+
+	if(increment%PAGE_SIZE){
+		if(increment>0)
+			increment += PAGE_SIZE-increment%PAGE_SIZE;
+		else increment -= PAGE_SIZE+increment%PAGE_SIZE;
+	}
+	uint32 new_block = blockSbrk+increment;
+	if(new_block>blockHardLimit||new_block<startBlock)
+		panic("get gud");
+	int s = increment>0?1:-1;
+	for(;blockSbrk!=startBlock+increment;blockSbrk+=s*PAGE_SIZE){
+		if(increment>0){
+			if(mall(blockSbrk)==E_NO_MEM)
+				return (void*)-1;
+		}
+		else
+			unmap_frame(ptr_page_directory,blockSbrk-PAGE_SIZE);
+
+	}
+
+	return (void*)blockSbrk;
+
 	//TODO: [PROJECT'23.MS2 - #02] [1] KERNEL HEAP - sbrk()
 	/* increment > 0: move the segment break of the kernel to increase the size of its heap,
 	 * 				you should allocate pages and map them into the kernel virtual address space as necessary,
@@ -49,8 +80,8 @@ void* sbrk(int increment)
 	 */
 
 	//MS2: COMMENT THIS LINE BEFORE START CODING====
-	return (void*)-1 ;
-	panic("not implemented yet");
+	//return (void*)-1 ;
+	//panic("not implemented yet");
 }
 
 
