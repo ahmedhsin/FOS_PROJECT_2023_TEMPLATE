@@ -3,7 +3,10 @@
 #include <inc/memlayout.h>
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
-
+/***/
+uint32 KheapPagesTrack[(KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE];
+#define KPAGENUMBER(va) ((va - KERNEL_HEAP_START) / PAGE_SIZE)
+/***/
 int mall(uint32 va){
 	struct FrameInfo *fr = NULL;
 	allocate_frame(&fr);
@@ -22,11 +25,12 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	//Return:
 	//	On success: 0
 	//	Otherwise (if no memory OR initial size exceed the given limit): E_NO_MEM
+	//cprintf("test : number of frames for kheap %d\n", (KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE);
 	startBlock = ROUNDDOWN(daStart, PAGE_SIZE);
 	blockSbrk = ROUNDUP(initSizeToAllocate + daStart, PAGE_SIZE);
 	blockHardLimit = ROUNDUP(daLimit, PAGE_SIZE);
 	KheapStart = blockHardLimit + PAGE_SIZE;
-
+	memset(KheapPagesTrack, 0, sizeof(KheapPagesTrack));
 	if (blockSbrk > blockHardLimit) return E_NO_MEM;
 	for (uint32 current = startBlock; current < blockSbrk; current += PAGE_SIZE){
 		if (mall(current)) return E_NO_MEM;
@@ -98,12 +102,10 @@ void* kmalloc(unsigned int size)
 	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
 	int maxPages = 0;
 	uint32 startPages = 0;
-	struct FrameInfo *frame = NULL;
+	bool isMapped;
 	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
-
-		uint32 *pgTable = NULL;
-		frame = get_frame_info(ptr_page_directory, currentAddress, &pgTable);
-		if (frame != 0){
+		isMapped = (KheapPagesTrack[KPAGENUMBER(currentAddress)]);
+		if (isMapped){
 			maxPages = 0;
 			startPages = 0;
 		}else{
@@ -119,6 +121,7 @@ void* kmalloc(unsigned int size)
 		{
 			if (mall(pagesHead))
 				return NULL;
+			KheapPagesTrack[KPAGENUMBER(pagesHead)] = startPages;
 			pagesHead += PAGE_SIZE;
 		}
 		return (void *)startPages;
