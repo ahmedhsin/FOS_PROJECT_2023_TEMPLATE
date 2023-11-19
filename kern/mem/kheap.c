@@ -3,6 +3,29 @@
 #include <inc/memlayout.h>
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
+/***/
+#define MAX_NUMBERS_OF_FRAMES 1048576
+uint32 KheapPagesTracker[NUM_OF_KHEAP_PAGES];
+uint32 KheapFramesTracker[MAX_NUMBERS_OF_FRAMES];
+uint32 isTrackerInitilized = 0;
+uint32 *tmpVal;
+#define KPAGENUMBER(va) ((va - KERNEL_HEAP_START) / PAGE_SIZE)
+#define KFRAMENUMBER(va) 0
+//#define KFRAMENUMBER(va) (to_frame_number(get_frame_info(ptr_page_directory, va, &tmpVal)))
+	void initilizeTracker(){
+	memset(KheapPagesTracker, 0, sizeof(KheapPagesTracker));
+	memset(KheapFramesTracker, 0, sizeof(KheapFramesTracker));
+	isTrackerInitilized = 1;
+}
+/***/
+int mall(uint32 va){
+	struct FrameInfo *fr = NULL;
+	allocate_frame(&fr);
+	if (fr == NULL) return E_NO_MEM;
+	map_frame(ptr_page_directory, fr, va, PERM_WRITEABLE);
+	KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = va;
+	return 0;
+}
 
 int mall(uint32 va){
 	struct FrameInfo *fr = NULL;
@@ -22,14 +45,19 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	//Return:
 	//	On success: 0
 	//	Otherwise (if no memory OR initial size exceed the given limit): E_NO_MEM
-	startBlock = daStart;
-	blockSbrk = initSizeToAllocate + daStart;
-	blockHardLimit = daLimit;
-	for (uint32 current = ROUNDDOWN(KERNEL_HEAP_START, PAGE_SIZE); current < ROUNDUP(KERNEL_HEAP_MAX, PAGE_SIZE); current += PAGE_SIZE)
-		if(mall(current)==E_NO_MEM)
-			return E_NO_MEM;
 
-	initialize_dynamic_allocator(daStart, initSizeToAllocate);
+
+	startBlock = ROUNDDOWN(daStart, PAGE_SIZE);
+	blockSbrk = ROUNDUP(initSizeToAllocate + daStart, PAGE_SIZE);
+	blockHardLimit = ROUNDUP(daLimit, PAGE_SIZE);
+	KheapStart = blockHardLimit + PAGE_SIZE;
+	if (!isTrackerInitilized) initilizeTracker();
+	if (blockSbrk > blockHardLimit) return E_NO_MEM;
+	for (uint32 current = startBlock; current < blockSbrk; current += PAGE_SIZE){
+		if (mall(current)) return E_NO_MEM;
+	}
+	initialize_dynamic_allocator(startBlock, blockSbrk - startBlock);
+
 
 	//Comment the following line(s) before start coding...
 	//panic("not implemented yet");
@@ -38,7 +66,7 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int increment)
 {
-	cprintf("%d",increment);
+
 	if(!increment)
 		return (void*)blockSbrk;
 
@@ -49,15 +77,19 @@ void* sbrk(int increment)
 	}
 	uint32 new_block = blockSbrk+increment;
 	if(new_block>blockHardLimit||new_block<startBlock)
-		panic("get gud");
+	panic("out of range : sbrk");
 	int s = increment>0?1:-1;
-	for(;blockSbrk!=startBlock+increment;blockSbrk+=s*PAGE_SIZE){
+	for(;blockSbrk != new_block;blockSbrk+=s*PAGE_SIZE){
 		if(increment>0){
 			if(mall(blockSbrk)==E_NO_MEM)
 				return (void*)-1;
 		}
-		else
+
+		else{
+			KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(blockSbrk-PAGE_SIZE))] = 0;
 			unmap_frame(ptr_page_directory,blockSbrk-PAGE_SIZE);
+		}
+
 
 	}
 
@@ -92,7 +124,38 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
 	//change this "return" according to your answer
-	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+
+	if (!isTrackerInitilized) initilizeTracker();
+	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
+		return alloc_block_FF(size);
+	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
+	int maxPages = 0;
+	uint32 startPages = 0;
+	bool isMapped;
+	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
+		isMapped = (KheapPagesTracker[KPAGENUMBER(currentAddress)]);
+		if (isMapped){
+			maxPages = 0;
+			startPages = 0;
+		}else{
+			maxPages++;
+			if (startPages == 0) startPages = currentAddress;
+		}
+		if (maxPages >= requiredPages) break;
+	}
+	if (maxPages >= requiredPages)
+	{
+		uint32 pagesHead = startPages;
+		while (requiredPages--)
+		{
+			if (mall(pagesHead))
+				return NULL;
+			KheapPagesTracker[KPAGENUMBER(pagesHead)] = startPages;
+			pagesHead += PAGE_SIZE;
+		}
+		return (void *)startPages;
+	}
+	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 	return NULL;
 }
 
@@ -101,7 +164,20 @@ void kfree(void* virtual_address)
 	//TODO: [PROJECT'23.MS2 - #04] [1] KERNEL HEAP - kfree()
 	//refer to the project presentation and documentation for details
 	// Write your code here, remove the panic and write your code
-	panic("kfree() is not implemented yet...!!");
+	uint32 va = (uint32)virtual_address;
+	if (va >= startBlock && va < blockSbrk){
+		free_block(virtual_address);
+		return;
+	}
+	if (va >= KheapStart && va < KERNEL_HEAP_MAX){
+		for (uint32 current = va;KheapPagesTracker[KPAGENUMBER(current)] == va; current += PAGE_SIZE){
+			KheapPagesTracker[KPAGENUMBER(current)] = 0;
+			KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(current))] = 0;
+			unmap_frame(ptr_page_directory, current);
+		}
+		return;
+	}
+	panic("invalid address : kfree");
 }
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
@@ -109,7 +185,7 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 	//TODO: [PROJECT'23.MS2 - #05] [1] KERNEL HEAP - kheap_virtual_address()
 	//refer to the project presentation and documentation for details
 	// Write your code here, remove the panic and write your code
-	panic("kheap_virtual_address() is not implemented yet...!!");
+	//panic("kheap_virtual_address() is not implemented yet...!!");
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
@@ -122,7 +198,7 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 	//TODO: [PROJECT'23.MS2 - #06] [1] KERNEL HEAP - kheap_physical_address()
 	//refer to the project presentation and documentation for details
 	// Write your code here, remove the panic and write your code
-	panic("kheap_physical_address() is not implemented yet...!!");
+	//panic("kheap_physical_address() is not implemented yet...!!");
 
 	//change this "return" according to your answer
 	return 0;
