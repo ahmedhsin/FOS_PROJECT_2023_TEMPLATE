@@ -3,7 +3,11 @@
 #include <inc/memlayout.h>
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
-
+/***/
+uint32 KheapPagesTrack[(KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE];
+uint32 isTrackerInitilized = 0;
+#define KPAGENUMBER(va) ((va - KERNEL_HEAP_START) / PAGE_SIZE)
+/***/
 int mall(uint32 va){
 	struct FrameInfo *fr = NULL;
 	allocate_frame(&fr);
@@ -22,6 +26,7 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	//Return:
 	//	On success: 0
 	//	Otherwise (if no memory OR initial size exceed the given limit): E_NO_MEM
+
 	startBlock = ROUNDDOWN(daStart, PAGE_SIZE);
 	blockSbrk = ROUNDUP(initSizeToAllocate + daStart, PAGE_SIZE);
 	blockHardLimit = ROUNDUP(daLimit, PAGE_SIZE);
@@ -93,17 +98,21 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
 	//change this "return" according to your answer
+
+	if (!isTrackerInitilized){
+		memset(KheapPagesTrack, 0, sizeof(KheapPagesTrack));
+		isTrackerInitilized = 1;
+	}
+
 	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
 		return alloc_block_FF(size);
 	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
 	int maxPages = 0;
 	uint32 startPages = 0;
-	struct FrameInfo *frame = NULL;
+	bool isMapped;
 	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
-
-		uint32 *pgTable = NULL;
-		frame = get_frame_info(ptr_page_directory, currentAddress, &pgTable);
-		if (frame != 0){
+		isMapped = (KheapPagesTrack[KPAGENUMBER(currentAddress)]);
+		if (isMapped){
 			maxPages = 0;
 			startPages = 0;
 		}else{
@@ -119,6 +128,7 @@ void* kmalloc(unsigned int size)
 		{
 			if (mall(pagesHead))
 				return NULL;
+			KheapPagesTrack[KPAGENUMBER(pagesHead)] = startPages;
 			pagesHead += PAGE_SIZE;
 		}
 		return (void *)startPages;
@@ -132,7 +142,19 @@ void kfree(void* virtual_address)
 	//TODO: [PROJECT'23.MS2 - #04] [1] KERNEL HEAP - kfree()
 	//refer to the project presentation and documentation for details
 	// Write your code here, remove the panic and write your code
-	panic("kfree() is not implemented yet...!!");
+	uint32 va = (uint32)virtual_address;
+	if (va >= startBlock && va < blockSbrk){
+		free_block(virtual_address);
+		return;
+	}
+	if (va >= KheapStart && va < KERNEL_HEAP_MAX){
+		for (uint32 current = va;KheapPagesTrack[KPAGENUMBER(current)] == va; current += PAGE_SIZE){
+			unmap_frame(ptr_page_directory, current);
+			KheapPagesTrack[KPAGENUMBER(current)] = 0;
+		}
+		return;
+	}
+	panic("invalid address : kfree");
 }
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
