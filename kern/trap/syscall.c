@@ -483,6 +483,14 @@ void* sys_sbrk(int increment)
 {
 	//TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
 	//MS2: COMMENT THIS LINE BEFORE START CODING====
+	if (increment>0 ){
+
+	}
+
+
+
+
+
 	return (void*)-1 ;
 	//====================================================
 
@@ -526,11 +534,9 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		return (uint32)sys_sbrk((int)a1);
 		break;
 	case SYS_allocate_user_mem :
-<<<<<<< HEAD
-		if (a1 == 0 ||a1+a2 >= USER_LIMIT )
-=======
-		if (a1 == 0 ||  a1 + a2 >= USER_LIMIT )
->>>>>>> 7607933ebab372ba4f7d3f9df47a6c8d2537d899
+
+		if (a1 == 0 || a1 + a2 >= USER_LIMIT )
+
 		    sched_kill_env(curenv->env_id);
 
 		sys_allocate_user_mem(a1,a2);
@@ -538,16 +544,18 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		return 0;
 		break;
 	case SYS_free_user_mem :
-<<<<<<< HEAD
-		if (a1 == 0 || a1+a2 >= USER_LIMIT )
-=======
+
 		if (a1 == 0 ||  a1 + a2 >= USER_LIMIT  )
->>>>>>> 7607933ebab372ba4f7d3f9df47a6c8d2537d899
+
 	       sched_kill_env(curenv->env_id);
 
 		sys_free_user_mem(a1,a2);
 		return 0;
 		break;
+	case SYS_get_Limit :
+		  return sys_get_Limit();
+          break;
+
 	//=====================================================================
 	case SYS_cputs:
 		sys_cputs((const char*)a1,a2,(uint8)a3);

@@ -363,3 +363,8 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 	//panic("not implemented yet");
 }
 
+int sys_get_Limit(){
+
+   return syscall(SYS_get_Limit ,0,0,0,0,0);
+
+}
