@@ -59,7 +59,7 @@ enum
 	SYS_sbrk,
 	SYS_allocate_user_mem,
 	SYS_free_user_mem,
-	SYS_get_Limit,
+	SYS_get_Limit
 };
 
 #endif /* !FOS_INC_SYSCALL_H */

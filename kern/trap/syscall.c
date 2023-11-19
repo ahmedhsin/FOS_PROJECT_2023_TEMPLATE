@@ -516,6 +516,11 @@ void* sys_sbrk(int increment)
 
 }
 
+int sys_get_limit(){
+
+	return curenv->hard_limit;
+}
+
 /**************************************************************************/
 /************************* SYSTEM CALLS HANDLER ***************************/
 /**************************************************************************/
@@ -551,7 +556,7 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		return 0;
 		break;
 	case SYS_get_Limit :
-	   //return sys_get_limit();
+		  return sys_get_limit();
           break;
 	//=====================================================================
 	case SYS_cputs:
