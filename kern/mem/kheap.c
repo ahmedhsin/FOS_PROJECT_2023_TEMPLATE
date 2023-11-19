@@ -22,14 +22,16 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	//Return:
 	//	On success: 0
 	//	Otherwise (if no memory OR initial size exceed the given limit): E_NO_MEM
-	startBlock = daStart;
-	blockSbrk = initSizeToAllocate + daStart;
-	blockHardLimit = daLimit;
-	for (uint32 current = ROUNDDOWN(KERNEL_HEAP_START, PAGE_SIZE); current < ROUNDUP(KERNEL_HEAP_MAX, PAGE_SIZE); current += PAGE_SIZE)
-		if(mall(current)==E_NO_MEM)
-			return E_NO_MEM;
+	startBlock = ROUNDDOWN(daStart, PAGE_SIZE);
+	blockSbrk = ROUNDUP(initSizeToAllocate + daStart, PAGE_SIZE);
+	blockHardLimit = ROUNDUP(daLimit, PAGE_SIZE);
+	KheapStart = blockHardLimit + PAGE_SIZE;
 
-	initialize_dynamic_allocator(daStart, initSizeToAllocate);
+	if (blockSbrk > blockHardLimit) return E_NO_MEM;
+	for (uint32 current = startBlock; current < blockSbrk; current += PAGE_SIZE){
+		if (mall(current)) return E_NO_MEM;
+	}
+	initialize_dynamic_allocator(startBlock, blockSbrk - startBlock);
 
 	//Comment the following line(s) before start coding...
 	//panic("not implemented yet");
@@ -38,7 +40,6 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int increment)
 {
-	cprintf("%d",increment);
 	if(!increment)
 		return (void*)blockSbrk;
 
@@ -49,9 +50,9 @@ void* sbrk(int increment)
 	}
 	uint32 new_block = blockSbrk+increment;
 	if(new_block>blockHardLimit||new_block<startBlock)
-		panic("get gud");
+		panic("out of range : sbrk");
 	int s = increment>0?1:-1;
-	for(;blockSbrk!=startBlock+increment;blockSbrk+=s*PAGE_SIZE){
+	for(;/*blockSbrk!=startBlock+increment*/blockSbrk != new_block;blockSbrk+=s*PAGE_SIZE){
 		if(increment>0){
 			if(mall(blockSbrk)==E_NO_MEM)
 				return (void*)-1;
@@ -92,7 +93,37 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
 	//change this "return" according to your answer
-	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
+		return alloc_block_FF(size);
+	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
+	int maxPages = 0;
+	uint32 startPages = 0;
+	struct FrameInfo *frame = NULL;
+	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
+
+		uint32 *pgTable = NULL;
+		frame = get_frame_info(ptr_page_directory, currentAddress, &pgTable);
+		if (frame != 0){
+			maxPages = 0;
+			startPages = 0;
+		}else{
+			maxPages++;
+			if (startPages == 0) startPages = currentAddress;
+		}
+		if (maxPages >= requiredPages) break;
+	}
+	if (maxPages >= requiredPages)
+	{
+		uint32 pagesHead = startPages;
+		while (requiredPages--)
+		{
+			if (mall(pagesHead))
+				return NULL;
+			pagesHead += PAGE_SIZE;
+		}
+		return (void *)startPages;
+	}
+	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 	return NULL;
 }
 

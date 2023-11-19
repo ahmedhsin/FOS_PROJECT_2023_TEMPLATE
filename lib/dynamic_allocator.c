@@ -139,33 +139,30 @@ void alloc(void* va, uint32 size){
 	}
 }
 
-void* new_block(uint32 size){
+void* new_block(uint32 size, int strategy){
 	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
-
+			void *oldSbrk = sbrk(0);
 	        if (tail->is_free)
 	        {
 	            uint32 neededSize = size - tail->size;
 
 	            if ((uint32)sbrk(neededSize) == -1)
 	                return NULL;
-
-	            tail->size = size;
-	            tail->is_free = 0;
-
-	            return (void *)((uint32)tail + (uint32)sizeOfMetaData());
+	            tail->size += (uint32)sbrk(0) - (uint32)oldSbrk;
+	            tail->is_free = 1;
 	        }
 	        else
 	        {
-	            void *oldSbrk = sbrk(0);
-
 	            if ((uint32)sbrk(size) == -1)
 	                return NULL;
 
-	            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk, size, 0);
+	            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk,  (uint32)sbrk(0) - (uint32)oldSbrk, 1);
 	            LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-
-	            return (void *)((uint32)addedBlock + (uint32)sizeOfMetaData());
 	        }
+			if (strategy == 1)
+				return alloc_block_BF(size);
+			else
+	            return alloc_block_FF(size);
 }
 
 //============================
@@ -226,7 +223,7 @@ void *alloc_block_FF(uint32 size)
 		return (void*) blockStart;
 	}
 	else
-		return new_block(totalRequiredSize);
+		return new_block(totalRequiredSize, 0);
 //panic("alloc_block_FF is not implemented yet");
 	return NULL;
 }
@@ -262,9 +259,9 @@ void *alloc_block_BF(uint32 size)
         return (void *)blockStart;
     }
     else
-    	return new_block(totalRequiredSize);
+    	return new_block(totalRequiredSize, 1);
 
-	panic("alloc_block_BF is not implemented yet");
+	//panic("alloc_block_BF is not implemented yet");
 	return NULL;
 }
 
