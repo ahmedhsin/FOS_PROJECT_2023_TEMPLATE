@@ -26,11 +26,12 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	//Return:
 	//	On success: 0
 	//	Otherwise (if no memory OR initial size exceed the given limit): E_NO_MEM
-	//cprintf("test : number of frames for kheap %d\n", (KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE);
+
 	startBlock = ROUNDDOWN(daStart, PAGE_SIZE);
 	blockSbrk = ROUNDUP(initSizeToAllocate + daStart, PAGE_SIZE);
 	blockHardLimit = ROUNDUP(daLimit, PAGE_SIZE);
 	KheapStart = blockHardLimit + PAGE_SIZE;
+
 	if (blockSbrk > blockHardLimit) return E_NO_MEM;
 	for (uint32 current = startBlock; current < blockSbrk; current += PAGE_SIZE){
 		if (mall(current)) return E_NO_MEM;
@@ -97,10 +98,12 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
 	//change this "return" according to your answer
+
 	if (!isTrackerInitilized){
 		memset(KheapPagesTrack, 0, sizeof(KheapPagesTrack));
 		isTrackerInitilized = 1;
 	}
+
 	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
 		return alloc_block_FF(size);
 	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
