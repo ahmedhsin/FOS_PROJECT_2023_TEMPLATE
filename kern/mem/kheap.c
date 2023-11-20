@@ -17,15 +17,22 @@ uint32 *tmpVal;
 	memset(KheapFramesTracker, 0, sizeof(KheapFramesTracker));
 	isTrackerInitilized = 1;
 }
-/***/
-int mall(uint32 va){
+int mall(uint32 va, uint32 st){
 	struct FrameInfo *fr = NULL;
 	allocate_frame(&fr);
 	if (fr == NULL) return E_NO_MEM;
 	map_frame(ptr_page_directory, fr, va, PERM_WRITEABLE);
 	KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = va;
+	KheapPagesTracker[KPAGENUMBER(va)] = st;
 	return 0;
 }
+void unmall(uint32 va){
+	KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = 0;
+	KheapPagesTracker[KPAGENUMBER(va)] = 0;
+	unmap_frame(ptr_page_directory,va);
+}
+
+/***/
 
 
 int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate, uint32 daLimit)
@@ -45,7 +52,7 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	if (!isTrackerInitilized) initilizeTracker();
 	if (blockSbrk > blockHardLimit) return E_NO_MEM;
 	for (uint32 current = startBlock; current < blockSbrk; current += PAGE_SIZE){
-		if (mall(current)) return E_NO_MEM;
+		if (mall(current, -1)) return E_NO_MEM;
 	}
 	initialize_dynamic_allocator(startBlock, blockSbrk - startBlock);
 
@@ -70,12 +77,11 @@ void* sbrk(int increment)
 	int s = increment>0?1:-1;
 	for(;blockSbrk != new_block;blockSbrk+=s*PAGE_SIZE){
 		if(increment>0){
-			if(mall(blockSbrk)==E_NO_MEM)
+			if(mall(blockSbrk, -1)==E_NO_MEM)
 				return (void*)-1;
 		}
 		else{
-			KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(blockSbrk-PAGE_SIZE))] = 0;
-			unmap_frame(ptr_page_directory,blockSbrk-PAGE_SIZE);
+			unmall(blockSbrk - PAGE_SIZE);
 		}
 
 	}
@@ -135,9 +141,8 @@ void* kmalloc(unsigned int size)
 		uint32 pagesHead = startPages;
 		while (requiredPages--)
 		{
-			if (mall(pagesHead))
+			if (mall(pagesHead, startPages))
 				return NULL;
-			KheapPagesTracker[KPAGENUMBER(pagesHead)] = startPages;
 			pagesHead += PAGE_SIZE;
 		}
 		return (void *)startPages;
@@ -158,9 +163,7 @@ void kfree(void* virtual_address)
 	}
 	if (va >= KheapStart && va < KERNEL_HEAP_MAX){
 		for (uint32 current = va;KheapPagesTracker[KPAGENUMBER(current)] == va; current += PAGE_SIZE){
-			KheapPagesTracker[KPAGENUMBER(current)] = 0;
-			KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(current))] = 0;
-			unmap_frame(ptr_page_directory, current);
+			unmall(current);
 		}
 		return;
 	}
