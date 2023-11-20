@@ -17,15 +17,13 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 {
 	//TODO: [PROJECT'23.MS2 - #14] [3] PAGE FAULT HANDLER - Create a new working set element
 	// Write your code here, remove the panic and write your code
-	struct WorkingSetElement *newopj = (struct WorkingSetElement *) e;
-	if(e->page_last_WS_element == NULL){
-		newopj->virtual_address = virtual_address ;
-		return newopj ;
+	struct WorkingSetElement *newopj = kmalloc(sizeof(struct WorkingSetElement));
+	if(newopj == NULL){
+		panic("page dose not created");
 	}
-	else{
-		panic("the page does not created");
-	}
-	return NULL;
+	newopj->virtual_address = virtual_address ;
+
+	return newopj;
 }
 inline void env_page_ws_invalidate(struct Env* e, uint32 virtual_address)
 {
