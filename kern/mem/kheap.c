@@ -65,27 +65,28 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int increment)
 {
+
 	if(!increment)
 		return (void*)blockSbrk;
-
-	if(increment%PAGE_SIZE){
-		if(increment>0)
-			increment += PAGE_SIZE-increment%PAGE_SIZE;
-		else increment -= increment%PAGE_SIZE;
-	}
 	uint32 new_block = blockSbrk+increment;
 	if(new_block>blockHardLimit||new_block<startBlock)
-		panic("out of range : sbrk");
-	int s = increment>0?1:-1;
-	for(;blockSbrk != new_block;blockSbrk+=s*PAGE_SIZE){
-		if(increment>0){
-			if(mall(blockSbrk, -1)==E_NO_MEM)
-				return (void*)-1;
-		}
-		else{
-			unmall(blockSbrk - PAGE_SIZE);
-		}
+			panic("out of range : sbrk");
 
+
+	uint32 alloced_page = blockSbrk - blockSbrk%PAGE_SIZE;
+	if(increment>0){
+	blockSbrk += increment;
+	if(blockSbrk%PAGE_SIZE)
+		blockSbrk += PAGE_SIZE - blockSbrk%PAGE_SIZE;
+	for(;alloced_page!=blockSbrk;alloced_page+=PAGE_SIZE)
+		if(mall(alloced_page, -1)==E_NO_MEM)
+					return (void*)-1;
+	}
+
+	if(increment<0){
+		blockSbrk+=increment;
+		for(;alloced_page>blockSbrk;alloced_page-=PAGE_SIZE)
+			unmall(alloced_page);
 	}
 
 	return (void*)blockSbrk;
@@ -105,10 +106,6 @@ void* sbrk(int increment)
 	 * 	3) Allocating additional pages for a kernel dynamic allocator will fail if the free frames are exhausted
 	 * 		or the break exceed the limit of the dynamic allocator. If sbrk fails, kernel should panic(...)
 	 */
-
-	//MS2: COMMENT THIS LINE BEFORE START CODING====
-	//return (void*)-1 ;
-	//panic("not implemented yet");
 }
 
 
