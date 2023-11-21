@@ -1,4 +1,11 @@
 #include <inc/lib.h>
+#include<inc/dynamic_allocator.h>
+
+//Custom
+uint32 malloced[(1<<30)/PAGE_SIZE*2] = {};
+int8 is_free(uint32 va){
+	return !malloced[va/PAGE_SIZE];
+}
 
 //==================================================================================//
 //============================== GIVEN FUNCTIONS ===================================//
@@ -42,11 +49,29 @@ void* malloc(uint32 size)
 	//==============================================================
 	//TODO: [PROJECT'23.MS2 - #09] [2] USER HEAP - malloc() [User Side]
 	// Write your code here, remove the panic and write your code
-	panic("malloc() is not implemented yet...!!");
-	return NULL;
-	//Use sys_isUHeapPlacementStrategyFIRSTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
-	//to check the current strategy
 
+	if(size<=DYN_ALLOC_MAX_SIZE)
+		return alloc_block_FF(size);
+	size+=PAGE_SIZE-1;
+	uint32 cnt = 0;
+	//place holder for sys call
+	uint32 va = PAGE_SIZE*1024+PAGE_SIZE;
+	for(; va<(1<<31);va+=PAGE_SIZE){
+		int8 valid = 1;
+		for(int i = va;i<va+size;){
+			if(!is_free(i)){
+				valid = 0;
+				va = i+malloced[i/PAGE_SIZE];
+				break;
+			}
+			if(!valid)
+				continue;
+			malloced[va/PAGE_SIZE] = size/PAGE_SIZE;
+			sys_allocate_user_mem(va,size);
+			return (void*)va;
+		}
+	}
+	return NULL;
 }
 
 //=================================
