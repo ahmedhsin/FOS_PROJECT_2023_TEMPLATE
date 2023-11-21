@@ -483,7 +483,12 @@ void* sys_sbrk(int increment)
 {
 	//TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
 	//MS2: COMMENT THIS LINE BEFORE START CODING====
+	struct Env* env = curenv; //the current running Environment to adjust its break limit
+     if (increment < PAGE_SIZE && increment < curenv->hard_limit ){
 
+    	 int current = curenv->
+
+     }
 
 
 
@@ -511,7 +516,6 @@ void* sys_sbrk(int increment)
 	 * 		be that sys_sbrk returns (void*) -1 and that the segment break and the process heap are unaffected.
 	 * 		You might have to undo any operations you have done so far in this case.
 	 */
-	struct Env* env = curenv; //the current running Environment to adjust its break limit
 
 
 }
