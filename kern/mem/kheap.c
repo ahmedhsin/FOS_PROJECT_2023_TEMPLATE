@@ -4,17 +4,17 @@
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
 /***/
-#define MAX_NUMBERS_OF_FRAMES 1048576
+//#define MAX_NUMBERS_OF_FRAMES 1048576
 uint32 KheapPagesTracker[NUM_OF_KHEAP_PAGES];
-uint32 KheapFramesTracker[MAX_NUMBERS_OF_FRAMES];
+//uint32 KheapFramesTracker[MAX_NUMBERS_OF_FRAMES];
 uint32 isTrackerInitilized = 0;
 uint32 *tmpVal;
 #define KPAGENUMBER(va) ((va - KERNEL_HEAP_START) / PAGE_SIZE)
-#define KFRAMENUMBER(va) 0
+//#define KFRAMENUMBER(va) 0
 //#define KFRAMENUMBER(va) (to_frame_number(get_frame_info(ptr_page_directory, va, &tmpVal)))
 	void initilizeTracker(){
 	memset(KheapPagesTracker, 0, sizeof(KheapPagesTracker));
-	memset(KheapFramesTracker, 0, sizeof(KheapFramesTracker));
+	//memset(KheapFramesTracker, 0, sizeof(KheapFramesTracker));
 	isTrackerInitilized = 1;
 }
 int mall(uint32 va, uint32 st){
@@ -22,12 +22,14 @@ int mall(uint32 va, uint32 st){
 	allocate_frame(&fr);
 	if (fr == NULL) return E_NO_MEM;
 	map_frame(ptr_page_directory, fr, va, PERM_WRITEABLE);
-	KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = va;
+	//KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = va;
+	fr->va = va;
+	cprintf("fr->va : %u\n", fr->va);
 	KheapPagesTracker[KPAGENUMBER(va)] = st;
 	return 0;
 }
 void unmall(uint32 va){
-	KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = 0;
+	//KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = 0;
 	KheapPagesTracker[KPAGENUMBER(va)] = 0;
 	unmap_frame(ptr_page_directory,va);
 }
