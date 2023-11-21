@@ -124,12 +124,13 @@ void* kmalloc(unsigned int size)
 	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
 	int maxPages = 0;
 	uint32 startPages = 0;
-	bool isMapped;
+	uint32 isMapped;
 	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
-		isMapped = (KheapPagesTracker[KPAGENUMBER(currentAddress)]);
+		isMapped = KheapPagesTracker[KPAGENUMBER(currentAddress)];
 		if (isMapped){
 			maxPages = 0;
 			startPages = 0;
+			currentAddress += (isMapped - 1) * PAGE_SIZE;
 		}else{
 			maxPages++;
 			if (startPages == 0) startPages = currentAddress;
@@ -139,9 +140,9 @@ void* kmalloc(unsigned int size)
 	if (maxPages >= requiredPages)
 	{
 		uint32 pagesHead = startPages;
-		while (requiredPages--)
+		while (maxPages--)
 		{
-			if (mall(pagesHead, startPages))
+			if (mall(pagesHead, requiredPages))
 				return NULL;
 			pagesHead += PAGE_SIZE;
 		}
@@ -162,8 +163,10 @@ void kfree(void* virtual_address)
 		return;
 	}
 	if (va >= KheapStart && va < KERNEL_HEAP_MAX){
-		for (uint32 current = va;KheapPagesTracker[KPAGENUMBER(current)] == va; current += PAGE_SIZE){
-			unmall(current);
+		uint32 totalPages = KheapPagesTracker[KPAGENUMBER(va)];
+		while(totalPages--){
+			unmall(va);
+			va += PAGE_SIZE;
 		}
 		return;
 	}
