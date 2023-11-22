@@ -2,10 +2,8 @@
 #include<inc/dynamic_allocator.h>
 
 //Custom
-uint32 malloced[(1<<30)/PAGE_SIZE*2] = {};
-int8 is_free(uint32 va){
-	return !malloced[va/PAGE_SIZE];
-}
+uint32 malloced[(1<<30)/PAGE_SIZE*4] = {};
+
 
 //==================================================================================//
 //============================== GIVEN FUNCTIONS ===================================//
@@ -52,23 +50,23 @@ void* malloc(uint32 size)
 
 	if(size<=DYN_ALLOC_MAX_SIZE)
 		return alloc_block_FF(size);
-	size+=PAGE_SIZE-1;
+	size+=PAGE_SIZE-size%PAGE_SIZE;
 	uint32 cnt = 0;
 	//place holder for sys call
-	uint32 va = PAGE_SIZE*1024+PAGE_SIZE;
-	for(; va<(1<<31);va+=PAGE_SIZE){
-		int8 valid = 1;
-		for(int i = va;i<va+size;){
-			if(!is_free(i)){
-				valid = 0;
-				va = i+malloced[i/PAGE_SIZE];
-				break;
-			}
-			if(!valid)
-				continue;
-			malloced[va/PAGE_SIZE] = size/PAGE_SIZE;
+	uint32 va = sys_get_limit()+PAGE_SIZE;
+	uint32 contig = 0;
+	uint32 to_free = malloced[va/PAGE_SIZE];
+	for(; va<USER_HEAP_MAX;){
+		if(malloced[va/PAGE_SIZE])
+			to_free = malloced[va/PAGE_SIZE],contig = 0;
+		else if(to_free)
+			to_free--;
+		if(!to_free)
+			contig++;
+		if(contig==size/PAGE_SIZE){
+			malloced[(va-size)/PAGE_SIZE] = size/PAGE_SIZE,
 			sys_allocate_user_mem(va,size);
-			return (void*)va;
+			return (void*)(va-size);
 		}
 	}
 	return NULL;
