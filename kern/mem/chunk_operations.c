@@ -128,7 +128,7 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 		if(page_table == NULL)
 			create_page_table(e->env_page_directory,virtual_address);
 		page_table = (void*)e->env_page_directory[PDX(virtual_address)];
-		MARK(page_table[PTX(virtual_address)]);
+		MARK(virtual_address,page_table);
 	}
 }
 
