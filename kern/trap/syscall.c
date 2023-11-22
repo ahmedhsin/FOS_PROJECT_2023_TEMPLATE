@@ -484,23 +484,27 @@ void* sys_sbrk(int increment)
 	//TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
 	//MS2: COMMENT THIS LINE BEFORE START CODING====
 	struct Env* env = curenv; //the current running Environment to adjust its break limit
-    if ( increment > curenv->hard_limit){
-
+    if ( curenv->seg_break  > curenv->hard_limit){
     	return (void*)-1 ;
     }
     int current = curenv->seg_break;
 	if (increment > 0 ){
-
-    	 ROUNDUP(curenv->seg_break,PAGE_SIZE);
-    	 return current;
-	}else {
-    	  if (increment < PAGE_SIZE ){
-
-		      curenv->seg_break = current + increment;
-    		  return  curenv->seg_break;
-    	  }
-    	  unmap_frame(ptr_page_directory,current-PAGE_SIZE);
-
+		 curenv->seg_break = current + increment;
+		 if (curenv->seg_break % PAGE_SIZE){//if the sbrk still in the page
+			 ROUNDUP(curenv->seg_break,PAGE_SIZE);
+		 }
+		 //for ( ;current<curenv->seg_break;curenv->seg_break-=PAGE_SIZE){
+	    // map_frame(ptr_page_directory,current);}
+    	 return (void*)current;
+	}else
+	{
+		 curenv->seg_break = current + increment;
+		 if (current % PAGE_SIZE == 0){
+    	    for ( ;current>curenv->seg_break;current-=PAGE_SIZE){
+    	      unmap_frame(ptr_page_directory,current);
+    	    }
+		 }
+    	 return (void*)curenv->seg_break;
      }
 
 
