@@ -13,9 +13,10 @@
 #include <kern/tests/utilities.h>
 //Custom
 #define MARKED_BIT 512
-#define IS_MARKED(pa) (pa&MARKED_BIT/MARKED_BIT)
-#define MARK(pa) (pa|=MARKED_BIT)
-#define UNMARK(pa) (pa&=~MARKED_BIT)
+#define IS_MARKED(va,pt) (pt[PTX(va)]&MARKED_BIT/MARKED_BIT)
+#define MARK(va,pt) (pt[PTX(va)]|=MARKED_BIT)
+#define UNMARK(va,pt) (pt[PTX(va)]&=~MARKED_BIT)
+
 //extern void inctst();
 
 /******************************/
