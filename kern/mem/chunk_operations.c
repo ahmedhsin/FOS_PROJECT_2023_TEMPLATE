@@ -11,7 +11,11 @@
 #include "memory_manager.h"
 #include <inc/queue.h>
 #include <kern/tests/utilities.h>
-
+//Custom
+#define MARKED_BIT 512
+#define IS_MARKED(pa) (pa&MARKED_BIT/MARKED_BIT)
+#define MARK(pa) (pa|=MARKED_BIT)
+#define UNMARK(pa) (pa&=~MARKED_BIT)
 //extern void inctst();
 
 /******************************/
@@ -117,15 +121,14 @@ uint32 calculate_required_frames(uint32* page_directory, uint32 sva, uint32 size
 //=====================================
 void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
-	/*=============================================================================*/
-	//TODO: [PROJECT'23.MS2 - #10] [2] USER HEAP - allocate_user_mem() [Kernel Side]
-	/*REMOVE THESE LINES BEFORE START CODING */
-	inctst();
-	return;
-	/*=============================================================================*/
-
-	// Write your code here, remove the panic and write your code
-	panic("allocate_user_mem() is not implemented yet...!!");
+	uint32 last_address = virtual_address+size;
+	for(;virtual_address!=last_address;virtual_address+=PAGE_SIZE){
+		uint32* page_table = (void*)e->env_page_directory[PDX(virtual_address)];
+		if(page_table == NULL)
+			create_page_table(e->env_page_directory,virtual_address);
+		page_table = (void*)e->env_page_directory[PDX(virtual_address)];
+		MARK(page_table[PTX(virtual_address)]);
+	}
 }
 
 //=====================================
