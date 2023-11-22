@@ -24,7 +24,7 @@ int mall(uint32 va, uint32 st){
 	map_frame(ptr_page_directory, fr, va, PERM_WRITEABLE);
 	//KheapFramesTracker[KFRAMENUMBER(kheap_physical_address(va))] = va;
 	fr->va = va;
-	cprintf("fr->va : %u\n", fr->va);
+	//cprintf("fr->va : %u\n", fr->va);
 	KheapPagesTracker[KPAGENUMBER(va)] = st;
 	return 0;
 }
@@ -109,23 +109,11 @@ void* sbrk(int increment)
 	 */
 }
 
-
-void* kmalloc(unsigned int size)
-{
-	//TODO: [PROJECT'23.MS2 - #03] [1] KERNEL HEAP - kmalloc()
-	//refer to the project presentation and documentation for details
-	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
-
-	//change this "return" according to your answer
-
-	if (!isTrackerInitilized) initilizeTracker();
-	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
-		return alloc_block_FF(size);
-	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
+void* kPagesAllocate(uint32 start, uint32 requiredPages){
 	int maxPages = 0;
 	uint32 startPages = 0;
 	uint32 isMapped;
-	for (uint32 currentAddress = KheapStart;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
+	for (uint32 currentAddress = start;currentAddress < KERNEL_HEAP_MAX; currentAddress += PAGE_SIZE){
 		isMapped = KheapPagesTracker[KPAGENUMBER(currentAddress)];
 		if (isMapped){
 			maxPages = 0;
@@ -148,8 +136,24 @@ void* kmalloc(unsigned int size)
 		}
 		return (void *)startPages;
 	}
-	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 	return NULL;
+}
+
+void* kmalloc(unsigned int size)
+{
+	//TODO: [PROJECT'23.MS2 - #03] [1] KERNEL HEAP - kmalloc()
+	//refer to the project presentation and documentation for details
+	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
+
+	//change this "return" according to your answer
+
+	if (!isTrackerInitilized) initilizeTracker();
+	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
+		return alloc_block_FF(size);
+	int requiredPages = (size % PAGE_SIZE == 0 ? size / PAGE_SIZE : size / PAGE_SIZE + 1);
+
+	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+	return kPagesAllocate(KheapStart, requiredPages);
 }
 
 void kfree(void* virtual_address)
@@ -234,6 +238,36 @@ void *krealloc(void *virtual_address, uint32 new_size)
 {
 	//TODO: [PROJECT'23.MS2 - BONUS#1] [1] KERNEL HEAP - krealloc()
 	// Write your code here, remove the panic and write your code
-	return NULL;
-	panic("krealloc() is not implemented yet...!!");
+	if (virtual_address == NULL) return kmalloc(new_size);
+	if (new_size <= DYN_ALLOC_MAX_BLOCK_SIZE){
+		kfree(virtual_address);
+		if (new_size > 0) return kmalloc(new_size);
+		return NULL;
+	}
+	int requiredPages = (new_size % PAGE_SIZE == 0 ? new_size / PAGE_SIZE : new_size / PAGE_SIZE + 1);
+	int actualPages = KheapPagesTracker[KPAGENUMBER((uint32)virtual_address)];
+	if (requiredPages == actualPages) return virtual_address;
+	if (requiredPages < actualPages){
+		kfree(virtual_address);
+		return kPagesAllocate((uint32)virtual_address, requiredPages);
+	}
+	uint32 freePagesN = 0, freePagesP = 0;
+	uint32 tmp_va = (uint32)virtual_address + actualPages * PAGE_SIZE;
+	while(!KheapPagesTracker[KPAGENUMBER(tmp_va)]){
+		freePagesN++; tmp_va+=PAGE_SIZE;
+		if (freePagesN == requiredPages-actualPages) break;
+	}
+	tmp_va = (uint32)virtual_address - PAGE_SIZE;
+	while(freePagesN != requiredPages-actualPages && tmp_va > KheapStart && !KheapPagesTracker[KPAGENUMBER(tmp_va)]){
+		freePagesP++; tmp_va-=PAGE_SIZE;
+		if (freePagesP == requiredPages-actualPages) break;
+	}
+	if (freePagesN + freePagesP < requiredPages-actualPages){
+		void *relocate = kmalloc(new_size);
+		if (relocate == NULL) return virtual_address;
+		kfree(virtual_address);
+		return relocate;
+	}
+	return kPagesAllocate(tmp_va, requiredPages);
+	//panic("krealloc() is not implemented yet...!!");
 }
