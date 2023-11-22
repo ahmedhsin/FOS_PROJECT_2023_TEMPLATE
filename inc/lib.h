@@ -66,9 +66,11 @@ void 	sys_scarce_memory();
 
 /*2024*/ //Dynamic Allocator
 void* 	sys_sbrk(int increment);
+
 //******************
 
 //User Heap
+uint32	sys_get_limit();
 void 	sys_free_user_mem(uint32 virtual_address, uint32 size);
 void	sys_allocate_user_mem(uint32 virtual_address, uint32 size);
 void	sys_allocate_chunk(uint32 virtual_address, uint32 size, uint32 perms);

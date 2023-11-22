@@ -275,6 +275,7 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 	return;
 }
 
+
 void sys_allocate_chunk(uint32 virtual_address, uint32 size, uint32 perms)
 {
 	allocate_chunk(curenv->env_page_directory, virtual_address, size, perms);
@@ -483,7 +484,27 @@ void* sys_sbrk(int increment)
 {
 	//TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
 	//MS2: COMMENT THIS LINE BEFORE START CODING====
-	return (void*)-1 ;
+	 if ( curenv->seg_break + increment  > curenv->hard_limit){
+	    	return (void*)-1 ;
+	  }
+		    int current = curenv->seg_break;
+			if (increment > 0 ){
+
+				 curenv->seg_break = current + increment;
+						 if (curenv->seg_break % PAGE_SIZE){//if the sbrk still in the page
+							 ROUNDUP(curenv->seg_break,PAGE_SIZE);
+						 }
+				    	 return (void*)current;
+					}else
+					{
+						 curenv->seg_break = current + increment;
+						 if (current % PAGE_SIZE == 0){
+				    	    for ( ;current>curenv->seg_break;current-=PAGE_SIZE){
+				    	      unmap_frame(ptr_page_directory,current);
+				    	    }
+						 }
+				    	 return (void*)curenv->seg_break;
+				     }
 	//====================================================
 
 	/*2023*/
@@ -510,6 +531,11 @@ void* sys_sbrk(int increment)
 
 }
 
+int sys_get_limit(){
+
+	return curenv->hard_limit;
+}
+
 /**************************************************************************/
 /************************* SYSTEM CALLS HANDLER ***************************/
 /**************************************************************************/
@@ -527,10 +553,16 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		break;
 	case SYS_allocate_user_mem :
 <<<<<<< HEAD
+<<<<<<< HEAD
 		if (a1 == 0 ||a1+a2 >= USER_LIMIT )
 =======
 		if (a1 == 0 ||  a1 + a2 >= USER_LIMIT )
 >>>>>>> 7607933ebab372ba4f7d3f9df47a6c8d2537d899
+=======
+
+		if (a1 == 0 || a1 + a2 >= USER_LIMIT )
+
+>>>>>>> 9d16ddce911e7e4c108dad5eeee7498fcc56dc89
 		    sched_kill_env(curenv->env_id);
 
 		sys_allocate_user_mem(a1,a2);
@@ -539,15 +571,24 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		break;
 	case SYS_free_user_mem :
 <<<<<<< HEAD
+<<<<<<< HEAD
 		if (a1 == 0 || a1+a2 >= USER_LIMIT )
 =======
 		if (a1 == 0 ||  a1 + a2 >= USER_LIMIT  )
 >>>>>>> 7607933ebab372ba4f7d3f9df47a6c8d2537d899
+=======
+
+		if (a1 == 0 ||  a1 + a2 >= USER_LIMIT  )
+
+>>>>>>> 9d16ddce911e7e4c108dad5eeee7498fcc56dc89
 	       sched_kill_env(curenv->env_id);
 
 		sys_free_user_mem(a1,a2);
 		return 0;
 		break;
+	case SYS_get_Limit :
+		  return sys_get_limit();
+          break;
 	//=====================================================================
 	case SYS_cputs:
 		sys_cputs((const char*)a1,a2,(uint8)a3);
