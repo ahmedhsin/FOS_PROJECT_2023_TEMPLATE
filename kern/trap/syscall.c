@@ -275,6 +275,7 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 	return;
 }
 
+
 void sys_allocate_chunk(uint32 virtual_address, uint32 size, uint32 perms)
 {
 	allocate_chunk(curenv->env_page_directory, virtual_address, size, perms);

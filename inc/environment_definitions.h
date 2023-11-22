@@ -85,6 +85,7 @@ struct Env {
 	LIST_ENTRY(Env) prev_next_info;	// Free list link pointers
 	int32 env_id;					// Unique environment identifier
 	int32 env_parent_id;			// env_id of this env's parent
+	uint32 HARD_LIMIT;
 	unsigned env_status;			// Status of the environment
 	int priority;					// Current priority
 	char prog_name[PROGNAMELEN];	// Program name (to print it via USER.cprintf in multitasking)
