@@ -66,7 +66,6 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int increment)
 {
-
 	if(!increment)
 		return (void*)blockSbrk;
 	uint32 new_block = blockSbrk+increment;
