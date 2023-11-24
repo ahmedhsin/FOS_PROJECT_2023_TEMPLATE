@@ -484,36 +484,29 @@ void* sys_sbrk(int increment)
 {
 	//TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
 	//MS2: COMMENT THIS LINE BEFORE START CODING====
-
-
-
-
-
-
 	return (void*)-1 ;
+	 if ( curenv->seg_break + increment  > curenv->hard_limit){
+	    	return (void*)-1 ;
+	  }
+		    int current = curenv->seg_break;
+			if (increment > 0 ){
+
+				 curenv->seg_break = current + increment;
+						 if (curenv->seg_break % PAGE_SIZE){//if the sbrk still in the page
+							 ROUNDUP(curenv->seg_break,PAGE_SIZE);
+						 }
+				    	 return (void*)current;
+					}else
+					{
+						 curenv->seg_break = current + increment;
+						 if (current % PAGE_SIZE == 0){
+				    	    for ( ;current>curenv->seg_break;current-=PAGE_SIZE){
+				    	      unmap_frame(ptr_page_directory,current);
+				    	    }
+						 }
+				    	 return (void*)curenv->seg_break;
+				     }
 	//====================================================
-
-	/*2023*/
-	/* increment > 0: move the segment break of the current user program to increase the size of its heap,
-	 * 				you should allocate NOTHING,
-	 * 				and returns the address of the previous break (i.e. the beginning of newly mapped memory).
-	 * increment = 0: just return the current position of the segment break
-	 * increment < 0: move the segment break of the current user program to decrease the size of its heap,
-	 * 				you should deallocate pages that no longer contain part of the heap as necessary.
-	 * 				and returns the address of the new break (i.e. the end of the current heap space).
-	 *
-	 * NOTES:
-	 * 	1) You should only have to allocate or deallocate pages if the segment break crosses a page boundary
-	 * 	2) New segment break should be aligned on page-boundary to avoid "No Man's Land" problem
-	 * 	3) As in real OS, allocate pages lazily. While sbrk moves the segment break, pages are not allocated
-	 * 		until the user program actually tries to access data in its heap (i.e. will be allocated via the fault handler).
-	 * 	4) Allocating additional pages for a process’ heap will fail if, for example, the free frames are exhausted
-	 * 		or the break exceed the limit of the dynamic allocator. If sys_sbrk fails, the net effect should
-	 * 		be that sys_sbrk returns (void*) -1 and that the segment break and the process heap are unaffected.
-	 * 		You might have to undo any operations you have done so far in this case.
-	 */
-	struct Env* env = curenv; //the current running Environment to adjust its break limit
-
 
 }
 
