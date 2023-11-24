@@ -354,8 +354,7 @@ void sys_free_user_mem(uint32 virtual_address, uint32 size)
 	//panic("not implemented yet");
 }
 
-void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
-{
+void sys_allocate_user_mem(uint32 virtual_address, uint32 size){
 	//Comment the following line before start coding...
 
 	syscall(SYS_allocate_user_mem ,virtual_address, size ,  0  ,0 ,0);
@@ -363,3 +362,4 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 	//panic("not implemented yet");
 }
 
+uint32 sys_get_limit(){ return syscall(SYS_get_Limit , 0 ,0 ,0 ,0 ,0); }

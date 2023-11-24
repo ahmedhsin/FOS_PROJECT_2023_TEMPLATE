@@ -1,4 +1,9 @@
 #include <inc/lib.h>
+#include<inc/dynamic_allocator.h>
+
+//Custom
+uint32 malloced[(1<<30)/PAGE_SIZE*4] = {};
+
 
 //==================================================================================//
 //============================== GIVEN FUNCTIONS ===================================//
@@ -42,11 +47,30 @@ void* malloc(uint32 size)
 	//==============================================================
 	//TODO: [PROJECT'23.MS2 - #09] [2] USER HEAP - malloc() [User Side]
 	// Write your code here, remove the panic and write your code
-	panic("malloc() is not implemented yet...!!");
-	return NULL;
-	//Use sys_isUHeapPlacementStrategyFIRSTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
-	//to check the current strategy
 
+	if(size<=DYN_ALLOC_MAX_SIZE)
+		return alloc_block_FF(size);
+	if(size%PAGE_SIZE)
+		size+=PAGE_SIZE-size%PAGE_SIZE;
+	uint32 va = sys_get_limit()+PAGE_SIZE;
+	uint32 contig = 0;
+	uint32 to_free = malloced[va/PAGE_SIZE];
+	for(; va<USER_HEAP_MAX;va+=PAGE_SIZE){
+		if(malloced[va/PAGE_SIZE])
+			to_free = malloced[va/PAGE_SIZE],contig = 0;
+
+		else if(to_free)
+			to_free--;
+
+		else contig++;
+
+		if(contig==size/PAGE_SIZE){
+			malloced[(va-size)/PAGE_SIZE] = size/PAGE_SIZE,
+			sys_allocate_user_mem(va,size);
+			return (void*)(va-size);
+		}
+	}
+	return NULL;
 }
 
 //=================================
@@ -56,7 +80,21 @@ void free(void* virtual_address)
 {
 	//TODO: [PROJECT'23.MS2 - #11] [2] USER HEAP - free() [User Side]
 	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+	uint32 BlockAllocLimit = sys_get_limit();
+	uint32 va = (uint32)virtual_address;
+
+	//invalid address,panic
+	if (USER_HEAP_MAX<=va || USER_HEAP_START> va)
+		panic("Invalid address provided to free()");
+
+	//block allocator
+	if (USER_HEAP_START<=va && BlockAllocLimit > va)
+		return free_block(virtual_address);
+
+	//page allocator
+	uint32 size = malloced[va/PAGE_SIZE]*PAGE_SIZE;
+	malloced[va/PAGE_SIZE] = 0;
+	sys_free_user_mem(va, size);
 }
 
 
