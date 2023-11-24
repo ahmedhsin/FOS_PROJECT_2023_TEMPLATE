@@ -3,11 +3,6 @@
 
 //Custom
 uint32 malloced[(1<<30)/PAGE_SIZE*4] = {};
-struct AllocationInfo {
-    uint32 size;
-};
-
-struct AllocationInfo allocationInfo[(1 << 30) / PAGE_SIZE * 4];
 
 
 //==================================================================================//
@@ -70,7 +65,6 @@ void* malloc(uint32 size)
 			contig++;
 		if(contig==size/PAGE_SIZE){
 			malloced[(va-size)/PAGE_SIZE] = size/PAGE_SIZE,
-			allocationInfo[(va-size)/PAGE_SIZE].size = size;
 			sys_allocate_user_mem(va,size);
 			return (void*)(va-size);
 		}
@@ -85,26 +79,21 @@ void free(void* virtual_address)
 {
 	//TODO: [PROJECT'23.MS2 - #11] [2] USER HEAP - free() [User Side]
 	// Write your code here, remove the panic and write your code
-
 	uint32 BlockAllocLimit = sys_get_limit();
-	    if ((void*)USER_HEAP_START<=virtual_address && (void*)BlockAllocLimit > virtual_address) {
-	    	free_block(virtual_address);
-	    }
-	    else if ((void*)USER_HEAP_MAX>virtual_address && ((void*)BlockAllocLimit+PAGE_SIZE) <= virtual_address ) {
-	    	uint32 index = (uint32)virtual_address / PAGE_SIZE;
-	    	uint32 size = allocationInfo[index].size;
-	    	uint32 start_index = (uint32)virtual_address / PAGE_SIZE;
-	    	    uint32 end_index = start_index + size / PAGE_SIZE;
+	uint32 va = (uint32)virtual_address;
 
-	    	    for (uint32 i = start_index; i < end_index; ++i) {
-	    	        malloced[i] = 0;
-	    	    }
-	        sys_free_user_mem(virtual_address, size);
-	    }
-	    // Invalid address, panic
-	    else {
-	        panic("Invalid address provided to free()");
-	    }
+	//invalid address,panic
+	if (USER_HEAP_MAX<=va || USER_HEAP_START> va)
+		panic("Invalid address provided to free()");
+
+	//block allocator
+	if (USER_HEAP_START<=va && BlockAllocLimit > va)
+		return free_block(virtual_address);
+
+	//page allocator
+	uint32 size = malloced[va/PAGE_SIZE]*PAGE_SIZE;
+	malloced[va/PAGE_SIZE] = 0;
+	sys_free_user_mem(va, size);
 }
 
 
