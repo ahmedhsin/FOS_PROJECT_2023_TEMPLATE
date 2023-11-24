@@ -12,7 +12,12 @@
 #endif
 #include <inc/types.h>
 #include <inc/environment_definitions.h>
-
+/**macros for ms2*/
+#define MARKED_BIT 512
+#define IS_MARKED(va,pt) (pt[PTX(va)]&MARKED_BIT/MARKED_BIT)
+#define MARK(va,pt) (pt[PTX(va)]|=MARKED_BIT)
+#define UNMARK(va,pt) (pt[PTX(va)]&=~MARKED_BIT)
+/**/
 /******************************/
 /*	DATA 					  */
 /******************************/
