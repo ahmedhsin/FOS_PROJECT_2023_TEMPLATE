@@ -52,17 +52,18 @@ void* malloc(uint32 size)
 		return alloc_block_FF(size);
 	if(size%PAGE_SIZE)
 		size+=PAGE_SIZE-size%PAGE_SIZE;
-	uint32 cnt = 0;
 	uint32 va = sys_get_limit()+PAGE_SIZE;
 	uint32 contig = 0;
 	uint32 to_free = malloced[va/PAGE_SIZE];
 	for(; va<USER_HEAP_MAX;va+=PAGE_SIZE){
 		if(malloced[va/PAGE_SIZE])
 			to_free = malloced[va/PAGE_SIZE],contig = 0;
+
 		else if(to_free)
 			to_free--;
-		if(!to_free)
-			contig++;
+
+		else contig++;
+
 		if(contig==size/PAGE_SIZE){
 			malloced[(va-size)/PAGE_SIZE] = size/PAGE_SIZE,
 			sys_allocate_user_mem(va,size);
