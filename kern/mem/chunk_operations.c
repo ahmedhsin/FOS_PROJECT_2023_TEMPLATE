@@ -13,13 +13,9 @@
 #include <kern/tests/utilities.h>
 //Custom
 #define MARKED_BIT 512
-#define ALLOCED_BIT 1024
 #define IS_MARKED(va,pt) ((pt[PTX(va)]&MARKED_BIT)/MARKED_BIT)
 #define MARK(va,pt) (pt[PTX(va)]|=MARKED_BIT)
 #define UNMARK(va,pt) (pt[PTX(va)]&=~MARKED_BIT)
-#define IS_ALLOCED(va,pt)((pt[PTX(va)]&ALLOCED_BIT)/ALLOCED_BIT)
-#define MARK_ALLOCED(va,pt)(pt[PTX(va)]|=ALLOCED_BIT)
-#define UNMARK_ALLOCED(va,pt)(pt[PTX(va)]&=~ALLOCED_BIT)
 //extern void inctst();
 
 /******************************/
@@ -142,19 +138,18 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	/*==========================================================================*/
 	//TODO: [PROJECT'23.MS2 - #12] [2] USER HEAP - free_user_mem() [Kernel Side]
-	/*==========================================================================*/
-	// Write your code here, remove the panic and write your code
-	//TODO: [PROJECT'23.MS2 - BONUS#2] [2] USER HEAP - free_user_mem() IN O(1): removing page from WS List instead of searching the entire list
+	uint32 last_address = virtual_address + size;
+	for (; virtual_address != last_address; virtual_address += PAGE_SIZE) {
+		uint32* page_table = (void*)e->env_page_directory[PDX(virtual_address)];
+		// Check if the page table exists; if not, there's nothing to unmark
+		if (page_table != NULL) {
+			UNMARK(virtual_address, page_table);
+			// Free the page from the Page File
+			pf_remove_env_page(e, virtual_address);
 
-	if(size%PAGE_SIZE)
-		size+=PAGE_SIZE-size%PAGE_SIZE;
-	uint32 va = virtual_address;
-	for(;va!=virtual_address;va+=PAGE_SIZE){
-		pf_remove_env_page(e,va);
-		uint32* page_table = (void*)e->env_page_directory[PDX(va)];
-		if(IS_ALLOCED(va,page_table))
-			env_page_ws_invalidate(e,va);
-		UNMARK_ALLOCED(va,page_table);
+			// Check if the page is in the working set and remove it
+			env_page_ws_invalidate(e, virtual_address);
+		}
 	}
 }
 
