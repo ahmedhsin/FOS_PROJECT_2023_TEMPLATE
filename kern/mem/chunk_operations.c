@@ -139,13 +139,22 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	/*==========================================================================*/
 	//TODO: [PROJECT'23.MS2 - #12] [2] USER HEAP - free_user_mem() [Kernel Side]
-	/*REMOVE THESE LINES BEFORE START CODING */
-	inctst();
-	return;
-	/*==========================================================================*/
+	uint32 last_address = virtual_address + size;
 
-	// Write your code here, remove the panic and write your code
-	panic("free_user_mem() is not implemented yet...!!");
+	    for (; virtual_address != last_address; virtual_address += PAGE_SIZE) {
+	        uint32* page_table = (void*)e->env_page_directory[PDX(virtual_address)];
+
+	        // Check if the page table exists; if not, there's nothing to unmark
+	        if (page_table != NULL) {
+	            UNMARK(virtual_address, page_table);
+
+	            // Free the page from the Page File
+	            pf_remove_env_page(e, virtual_address);
+
+	            // Check if the page is in the working set and remove it
+	            env_page_ws_invalidate(e, virtual_address);
+	        }
+	    }
 
 	//TODO: [PROJECT'23.MS2 - BONUS#2] [2] USER HEAP - free_user_mem() IN O(1): removing page from WS List instead of searching the entire list
 
