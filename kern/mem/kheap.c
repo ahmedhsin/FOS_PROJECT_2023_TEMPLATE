@@ -184,9 +184,11 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 	//panic("kheap_virtual_address() is not implemented yet...!!");
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
-
 	//change this "return" according to your answer
-	return 0;
+	struct FrameInfo *fr = to_frame_info(physical_address);
+	if (!fr->references) return 0;
+	return (unsigned int)PGADDR(PDX(fr->va), PTX(fr->va), PGOFF(physical_address));
+
 }
 
 unsigned int kheap_physical_address(unsigned int virtual_address)
@@ -197,9 +199,10 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 	//panic("kheap_physical_address() is not implemented yet...!!");
 
 	//change this "return" according to your answer
-	return 0;
+	struct FrameInfo *fr =  get_frame_info(ptr_page_directory, virtual_address, &tmpVal);
+	if (fr == NULL) return 0;
+	return to_physical_address(fr) | PGOFF(virtual_address);
 }
-
 
 void kfreeall()
 {
