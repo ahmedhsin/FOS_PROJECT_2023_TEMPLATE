@@ -379,18 +379,20 @@ void fault_handler(struct Trapframe *tf)
 			//TODO: [PROJECT'23.MS2 - #13] [3] PAGE FAULT HANDLER - Check for invalid pointers
 			//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
 			//your code is here
-			cprintf("%u",fault_va);
+			struct WorkingSetElement* el;
 			uint32 per = pt_get_page_permissions(faulted_env->env_page_directory, fault_va);
 			uint32 inHeap = (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX);
 			uint32 isMarked = (per & 0x200) == 0x200;
-			uint32 isReadOnly = (per & PERM_WRITEABLE) != PERM_WRITEABLE;
-			uint32 isKernal  = (per & PERM_USER) != PERM_USER;
-			uint32 isPresent = (per&PERM_PRESENT) == PERM_PRESENT;
+			uint32 isReadOnly = !(per & PERM_WRITEABLE) ;
+			uint32 isKernal  = !(per & PERM_USER) ;
+			uint32 isPresent = (per&PERM_PRESENT);
 			bool kill = 0;
 			if ((isKernal || isReadOnly))
 				kill = 1;
 			if ((!isMarked && inHeap))
 				kill = 1;
+			if(!isPresent)
+				kill = 0;
 
 			if(kill) sched_kill_env(faulted_env->env_id);
 			/*============================================================================================*/
@@ -406,9 +408,9 @@ void fault_handler(struct Trapframe *tf)
 		// we have normal page fault =============================================================
 		faulted_env->pageFaultsCounter ++ ;
 
-		//		cprintf("[%08s] user PAGE fault va %08x\n", curenv->prog_name, fault_va);
-		//		cprintf("\nPage working set BEFORE fault handler...\n");
-		//		env_page_ws_print(curenv);
+		cprintf("[%08s] user PAGE fault va %08x\n", curenv->prog_name, fault_va);
+		cprintf("\nPage working set BEFORE fault handler...\n");
+		env_page_ws_print(curenv);
 
 		if(isBufferingEnabled())
 		{
@@ -416,11 +418,10 @@ void fault_handler(struct Trapframe *tf)
 		}
 		else
 		{
-			//page_fault_handler(faulted_env, fault_va);
 			page_fault_handler(faulted_env, fault_va);
 		}
-		//		cprintf("\nPage working set AFTER fault handler...\n");
-		//		env_page_ws_print(curenv);
+		cprintf("\nPage working set AFTER fault handler...\n");
+		env_page_ws_print(curenv);
 
 
 	}
