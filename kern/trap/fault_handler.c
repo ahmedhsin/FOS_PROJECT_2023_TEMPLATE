@@ -92,7 +92,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		//TODO: [PROJECT'23.MS2 - #15] [3] PAGE FAULT HANDLER - Placement
 		// Write your code here, remove the panic and write your code
 		//panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
-		struct FrameInfo *fr;
+		struct FrameInfo *fr = NULL;
 		allocate_frame(&fr);
 		int per =  pt_get_page_permissions(curenv->env_page_directory, fault_va);
 		map_frame(curenv->env_page_directory, fr, fault_va, PERM_WRITEABLE);
