@@ -117,8 +117,8 @@ uint32 calculate_required_frames(uint32* page_directory, uint32 sva, uint32 size
 //=====================================
 void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
+	cprintf("%x\n",virtual_address);
 	uint32 last_address = virtual_address+size;
-	cprintf("pt: %u\n",e->env_page_directory[520]);
 	for(;virtual_address!=last_address;virtual_address+=PAGE_SIZE){
 		uint32* page_table;
 		get_page_table(e->env_page_directory,virtual_address,&page_table);
@@ -127,7 +127,7 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			get_page_table(e->env_page_directory,virtual_address,&page_table);
 		MARK(virtual_address,page_table);
 	}
-	cprintf("pt: %u\n",e->env_page_directory[520]);
+
 }
 
 //=====================================
@@ -139,19 +139,21 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 	//TODO: [PROJECT'23.MS2 - #12] [2] USER HEAP - free_user_mem() [Kernel Side]
 	uint32 last_address = virtual_address + size;
 	for (; virtual_address != last_address; virtual_address += PAGE_SIZE) {
-		uint32* page_table = (void*)e->env_page_directory[PDX(virtual_address)];
-		// Check if the page table exists; if not, there's nothing to unmark
+		uint32* page_table;
+		get_page_table(e->env_page_directory,virtual_address,&page_table);
+
 		if (page_table != NULL) {
 			UNMARK(virtual_address, page_table);
 			// Free the page from the Page File
 			pf_remove_env_page(e, virtual_address);
-
 			// Check if the page is in the working set and remove it
 			env_page_ws_invalidate(e, virtual_address);
 
-			if(e->env_page_directory[PDX(virtual_address)] <(uint32)USER_HEAP_START)
-				panic("HERE\n");
-		}
+			unmap_frame(e->env_page_directory,virtual_address);
+			pt_clear_page_table_entry(e->env_page_directory,virtual_address);
+
+	}
+
 	}
 }
 
