@@ -379,7 +379,7 @@ void fault_handler(struct Trapframe *tf)
 			//TODO: [PROJECT'23.MS2 - #13] [3] PAGE FAULT HANDLER - Check for invalid pointers
 			//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
 			//your code is here
-			struct WorkingSetElement* el;
+			cprintf("%u\n%u %u\ntrp\n",fault_va,USER_HEAP_START,USER_HEAP_MAX);
 			uint32 per = pt_get_page_permissions(faulted_env->env_page_directory, fault_va);
 			uint32 inHeap = (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX);
 			uint32 isMarked = (per & 0x200) == 0x200;
@@ -408,9 +408,9 @@ void fault_handler(struct Trapframe *tf)
 		// we have normal page fault =============================================================
 		faulted_env->pageFaultsCounter ++ ;
 
-		cprintf("[%08s] user PAGE fault va %08x\n", curenv->prog_name, fault_va);
-		cprintf("\nPage working set BEFORE fault handler...\n");
-		env_page_ws_print(curenv);
+		//cprintf("[%08s] user PAGE fault va %08x\n", curenv->prog_name, fault_va);
+		//cprintf("\nPage working set BEFORE fault handler...\n");
+		//env_page_ws_print(curenv);
 
 		if(isBufferingEnabled())
 		{
@@ -420,8 +420,8 @@ void fault_handler(struct Trapframe *tf)
 		{
 			page_fault_handler(faulted_env, fault_va);
 		}
-		cprintf("\nPage working set AFTER fault handler...\n");
-		env_page_ws_print(curenv);
+		//cprintf("\nPage working set AFTER fault handler...\n");
+		//env_page_ws_print(curenv);
 
 
 	}

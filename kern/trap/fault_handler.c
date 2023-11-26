@@ -87,6 +87,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 
 	if(wsSize < (curenv->page_WS_max_size))
 	{
+		cprintf("fv: %u\n",fault_va);
 		//cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
 		//TODO: [PROJECT'23.MS2 - #15] [3] PAGE FAULT HANDLER - Placement
 		// Write your code here, remove the panic and write your code
@@ -97,11 +98,8 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		map_frame(curenv->env_page_directory, fr, fault_va, PERM_WRITEABLE);
 		int ret = pf_read_env_page(curenv, (void *)fault_va);
 		if(ret == E_PAGE_NOT_EXIST_IN_PF){
-			uint32 inHeap;
-			if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX)
-				inHeap = 1;
-			else inHeap = 0;
-			uint32 inStack = (fault_va >= USTACKBOTTOM && fault_va < USTACKTOP);
+			uint32 inHeap = (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX);
+					uint32 inStack = (fault_va >= USTACKBOTTOM && fault_va < USTACKTOP);
 			if(!(inHeap || inStack)){
 				unmap_frame(curenv->env_page_directory, fault_va);
 				sched_kill_env(curenv->env_id);
@@ -114,7 +112,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 
 
 		if((curenv->page_WS_list.size) == (curenv->page_WS_max_size))
-			curenv->page_last_WS_element = LIST_NEXT(newWorkingElement);
+			curenv->page_last_WS_element = curenv->page_WS_list.lh_first;
 		else curenv->page_last_WS_element = NULL;
 
 		//refer to the project presentation and documentation for details

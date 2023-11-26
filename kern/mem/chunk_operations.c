@@ -118,13 +118,15 @@ uint32 calculate_required_frames(uint32* page_directory, uint32 sva, uint32 size
 void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	uint32 last_address = virtual_address+size;
+	cprintf("pt: %u\n",e->env_page_directory[520]);
 	for(;virtual_address!=last_address;virtual_address+=PAGE_SIZE){
 		uint32* page_table = (void*)e->env_page_directory[PDX(virtual_address)];
 		if(page_table == NULL)
-			create_page_table(e->env_page_directory,virtual_address);
-		page_table = (void*)e->env_page_directory[PDX(virtual_address)];
+			page_table = create_page_table(e->env_page_directory,virtual_address);
+		e->env_page_directory[PDX(virtual_address)] = (uint32)page_table;
 		MARK(virtual_address,page_table);
 	}
+	cprintf("pt: %u\n",e->env_page_directory[520]);
 }
 
 //=====================================
