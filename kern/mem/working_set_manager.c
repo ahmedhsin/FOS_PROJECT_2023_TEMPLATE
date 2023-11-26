@@ -17,7 +17,7 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 {
 	//TODO: [PROJECT'23.MS2 - #14] [3] PAGE FAULT HANDLER - Create a new working set element
 	// Write your code here, remove the panic and write your code
-	struct WorkingSetElement *newopj = kmalloc(sizeof(struct WorkingSetElement));
+	struct WorkingSetElement *newopj = (struct WorkingSetElement *)kmalloc(sizeof(struct WorkingSetElement));
 	if(newopj == NULL){
 		panic("page dose not created");
 	}
