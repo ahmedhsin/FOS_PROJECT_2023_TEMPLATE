@@ -480,34 +480,38 @@ void sys_bypassPageFault(uint8 instrLength)
 /* DYNAMIC ALLOCATOR SYSTEM CALLS */
 /**********************************/
 /*2024*/
-void* sys_sbrk(int increment)
+void *sys_sbrk(int increment)
 {
-	//TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
-	//MS2: COMMENT THIS LINE BEFORE START CODING====
-	return (void*)-1 ;
-	 if ( curenv->seg_break + increment  > curenv->hard_limit){
-	    	return (void*)-1 ;
-	  }
-		    int current = curenv->seg_break;
-			if (increment > 0 ){
+	// TODO: [PROJECT'23.MS2 - #08] [2] USER HEAP - Block Allocator - sys_sbrk() [Kernel Side]
+	// MS2: COMMENT THIS LINE BEFORE START CODING====
+	// return (void*)-1 ;
+	if(!increment) return (void *)curenv->seg_break;
+	if (curenv->seg_break + increment > curenv->hard_limit||curenv->seg_break+increment<USER_HEAP_START)
+	{
+		return (void *)-1;
+	}
+	uint32 current = curenv->seg_break;
 
-				 curenv->seg_break = current + increment;
-						 if (curenv->seg_break % PAGE_SIZE){//if the sbrk still in the page
-							 ROUNDUP(curenv->seg_break,PAGE_SIZE);
-						 }
-				    	 return (void*)current;
-					}else
-					{
-						 curenv->seg_break = current + increment;
-						 if (current % PAGE_SIZE == 0){
-				    	    for ( ;current>curenv->seg_break;current-=PAGE_SIZE){
-				    	      unmap_frame(ptr_page_directory,current);
-				    	    }
-						 }
-				    	 return (void*)curenv->seg_break;
-				     }
+	if (increment > 0)
+	{
+
+		curenv->seg_break += increment;
+		curenv->seg_break = ROUNDUP(curenv->seg_break, PAGE_SIZE);
+
+		return (void *)current;
+	}
+	else
+	{
+
+		current = ROUNDDOWN(curenv->seg_break, PAGE_SIZE);
+		curenv->seg_break += increment;
+		for (; current > curenv->seg_break; current -= PAGE_SIZE)
+		{
+			unmap_frame(curenv->env_page_directory, current);
+		}
+		return (void *)curenv->seg_break;
+	}
 	//====================================================
-
 }
 
 int sys_get_limit(){
