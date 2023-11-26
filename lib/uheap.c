@@ -65,7 +65,7 @@ void* malloc(uint32 size)
 		else if(to_free)
 			to_free--;
 
-		else contig++;
+		if(!to_free) contig++;
 		if(contig==size/PAGE_SIZE){
 			malloced[(va-size)/PAGE_SIZE+1] = size/PAGE_SIZE;
 			sys_allocate_user_mem(va-size+PAGE_SIZE,size);

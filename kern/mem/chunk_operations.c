@@ -120,10 +120,11 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 	uint32 last_address = virtual_address+size;
 	cprintf("pt: %u\n",e->env_page_directory[520]);
 	for(;virtual_address!=last_address;virtual_address+=PAGE_SIZE){
-		uint32* page_table = (void*)e->env_page_directory[PDX(virtual_address)];
-		if(page_table == NULL)
-			page_table = create_page_table(e->env_page_directory,virtual_address);
-		e->env_page_directory[PDX(virtual_address)] = (uint32)page_table;
+		uint32* page_table;
+		get_page_table(e->env_page_directory,virtual_address,&page_table);
+		if(!page_table)
+			create_page_table(e->env_page_directory, virtual_address),
+			get_page_table(e->env_page_directory,virtual_address,&page_table);
 		MARK(virtual_address,page_table);
 	}
 	cprintf("pt: %u\n",e->env_page_directory[520]);
@@ -147,6 +148,9 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 			// Check if the page is in the working set and remove it
 			env_page_ws_invalidate(e, virtual_address);
+
+			if(e->env_page_directory[PDX(virtual_address)] <(uint32)USER_HEAP_START)
+				panic("HERE\n");
 		}
 	}
 }
