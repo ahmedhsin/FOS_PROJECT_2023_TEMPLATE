@@ -141,7 +141,9 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 		uint32* page_table;
 		get_page_table(e->env_page_directory,virtual_address,&page_table);
 
+
 		if (page_table != NULL) {
+
 			struct FrameInfo * fi =
 					get_frame_info(e->env_page_directory,virtual_address,&page_table);
 
@@ -166,6 +168,7 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			pf_remove_env_page(e, virtual_address);
 
 			}
+
 	}
 }
 
