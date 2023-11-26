@@ -50,7 +50,7 @@ void* malloc(uint32 size)
 
 	if(size<=DYN_ALLOC_MAX_BLOCK_SIZE){
 		uint32 add= (uint32)alloc_block_FF(size);
-		cprintf("%u\n",add);
+		//cprintf("%u\n",add);
 		return (void*)add;
 	}
 	if(size%PAGE_SIZE)
