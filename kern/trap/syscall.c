@@ -486,7 +486,7 @@ void *sys_sbrk(int increment)
 	// MS2: COMMENT THIS LINE BEFORE START CODING====
 	// return (void*)-1 ;
 	if(!increment) return (void *)curenv->seg_break;
-	if (curenv->seg_break + increment > curenv->hard_limit||curenv->seg_break+increment<USER_HEAP_START)
+	if (curenv->seg_break + increment > curenv->hard_limit)
 	{
 		return (void *)-1;
 	}

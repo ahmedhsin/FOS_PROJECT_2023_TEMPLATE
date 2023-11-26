@@ -217,6 +217,7 @@ void _main(void)
 			free(ptr_allocations[0]);
 
 			if ((usedDiskPages - sys_pf_calculate_allocated_pages()) != 0) panic("Wrong free: Extra or less pages are removed from PageFile");
+			atomic_cprintf("fred: %d\n",(sys_calculate_free_frames() - freeFrames) ) ;
 			if ((sys_calculate_free_frames() - freeFrames) != 2 ) panic("Wrong free: WS pages in memory and/or page tables are not freed correctly");
 			uint32 notExpectedVAs[2] = { ROUNDDOWN((uint32)(&(byteArr[0])), PAGE_SIZE), ROUNDDOWN((uint32)(&(byteArr[lastIndexOfByte])), PAGE_SIZE)} ;
 			chk = sys_check_WS_list(notExpectedVAs, 2, 0, 3);
