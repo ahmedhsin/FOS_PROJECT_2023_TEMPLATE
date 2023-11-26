@@ -141,6 +141,7 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 		uint32* page_table;
 		get_page_table(e->env_page_directory,virtual_address,&page_table);
 
+
 		if (page_table != NULL) {
 			uint32 pa = page_table[PTX(virtual_address)];
 		if(pa/PAGE_SIZE)
@@ -151,6 +152,7 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 		// Check if the page is in the working set and remove it
 		env_page_ws_invalidate(e, virtual_address);
 		}
+
 	}
 }
 
