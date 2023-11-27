@@ -383,7 +383,10 @@ void fault_handler(struct Trapframe *tf)
 			//cprintf("%u\n%u %u\ntrp\n",fault_va,USER_HEAP_START,USER_HEAP_MAX);
 
 			uint32 per = pt_get_page_permissions(faulted_env->env_page_directory, fault_va);
-			uint32 inHeap = (fault_va >= faulted_env->hard_limit+ PAGE_SIZE && fault_va < USER_HEAP_MAX);			uint32 isMarked = (per & 0x200) == 0x200;
+
+			uint32 inHeap = (fault_va >= faulted_env->hard_limit+ PAGE_SIZE && fault_va < USER_HEAP_MAX);
+			uint32 isMarked = (per & 0x200) == 0x200;
+
 			uint32 isReadOnly = !(per & PERM_WRITEABLE) ;
 			uint32 isKernal  = !(per & PERM_USER) ;
 			uint32 isPresent = (per&PERM_PRESENT);
@@ -391,10 +394,12 @@ void fault_handler(struct Trapframe *tf)
 
 			if ((isKernal || isReadOnly))
 				kill = 1;
+
 			if(!isPresent)
 				kill = 0;
 			if ((!isMarked && inHeap))
 				kill = 1;
+
 
 			if(kill) sched_kill_env(faulted_env->env_id);
 			/*============================================================================================*/
