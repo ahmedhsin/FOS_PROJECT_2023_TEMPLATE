@@ -145,7 +145,7 @@ void _main(void)
 		if(get_block_size(tstStartVAs[1]) != allocSizes[0])
 		{
 			is_correct = 0;
-			cprintf("malloc() #3: WRONG FF ALLOC - make sure if the remaining free space doesn’t fit a dynamic allocator block, then this area should be added to the allocated area and counted as internal fragmentation\n");
+			cprintf("malloc() #3: WRONG FF ALLOC - make sure if the remaining free space doesnï¿½t fit a dynamic allocator block, then this area should be added to the allocated area and counted as internal fragmentation\n");
 			//break;
 		}
 		if (is_correct)
