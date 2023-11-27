@@ -83,7 +83,6 @@ void _main(void)
 			if (chk != 1) panic("free: page is not removed from WS");
 		}
 	}
-
 	//Test accessing a freed area but NOT ACCESSED Before (processes should be killed by the validation of the fault handler)
 	{
 		byteArr[8*kilo] = minByte ;
