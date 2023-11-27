@@ -215,7 +215,6 @@ void _main(void)
 
 		//Fill the remaining area
 		uint32 numOfRem2KBAllocs = ((USER_HEAP_START + DYN_ALLOC_MAX_SIZE - (uint32)sbrk(0)) / PAGE_SIZE) * 2;
-		atomic_cprintf("%d\n",numOfRem2KBAllocs);
 		for (int i = 0; i < numOfRem2KBAllocs; ++i)
 		{
 			va = malloc(actualSize);

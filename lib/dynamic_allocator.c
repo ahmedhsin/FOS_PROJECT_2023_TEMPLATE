@@ -1,9 +1,3 @@
-/*
- * dynamic_allocator.c
- *
- *  Created on: Sep 21, 2023
- *      Author: HP
- */
 #include <inc/assert.h>
 #include <inc/string.h>
 #include "../inc/dynamic_allocator.h"
@@ -122,6 +116,7 @@ void coalesce(void* va){
 		return;
 	if(!blk2->is_free)
 		return;
+	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
 	blk1->size+=blk2->size;
 	LIST_REMOVE(&linkedListMemoryBlocks,blk2);
 	clearMetaDataBlock(blk2);
@@ -142,27 +137,19 @@ void alloc(void* va, uint32 size){
 void* new_block(uint32 size, int strategy){
 	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
 			void *oldSbrk = sbrk(0);
-	        if (tail->is_free)
-	        {
-	            uint32 neededSize = size - tail->size;
 
-	            if ((uint32)sbrk(neededSize) == -1)
-	                return NULL;
-	            tail->size += (uint32)sbrk(0) - (uint32)oldSbrk;
-	            tail->is_free = 1;
-	        }
-	        else
-	        {
+
 	            if ((uint32)sbrk(size) == -1)
 	                return NULL;
 
 	            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk,  (uint32)sbrk(0) - (uint32)oldSbrk, 1);
 	            LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-	        }
-			if (strategy == 1)
-				return alloc_block_BF(size);
-			else
-	            return alloc_block_FF(size);
+	            if(!strategy){
+	            alloc(addedBlock,size);
+	            return addedBlock;
+	            }
+
+	        return alloc_block_BF(size);
 }
 
 //============================
@@ -193,7 +180,8 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 // [4] ALLOCATE BLOCK BY FIRST FIT:
 //=========================================
 
-
+uint8 fred = 1;
+struct BlockMetaData* la = NULL;
 void *alloc_block_FF(uint32 size)
 {
 	//TODO: [PROJECT'23.MS1 - #6] [3] DYNAMIC ALLOCATOR - alloc_block_FF()
@@ -211,21 +199,35 @@ void *alloc_block_FF(uint32 size)
 	struct BlockMetaData *currentBlock, *firstFitBlock;
 	uint32 totalRequiredSize = size + sizeOfMetaData();
 	int isFound = 0;
+	uint8 f = 0;
 	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
+		//if(!fred&&la!=NULL)
+			//currentBlock = la;
 		if (isFound == 0 && currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1){
 			isFound = 1;
 			firstFitBlock = currentBlock;
+			fred = f;
+			if(!f)
+				la = currentBlock;
+			break;
 		}
+		if(currentBlock->is_free)
+			f = 1;
 	}
+
 	if (isFound){
 		alloc(firstFitBlock,totalRequiredSize);
 		uint32 blockStart = (uint32)firstFitBlock + (uint32)sizeOfMetaData();
 		return (void*) blockStart;
 	}
-	else
-		return new_block(totalRequiredSize, 0);
-//panic("alloc_block_FF is not implemented yet");
-	return NULL;
+	else{
+		void *ret = new_block(totalRequiredSize, 0);
+		if(ret==NULL)
+			return ret;
+		return ret + sizeOfMetaData();
+	}
+	//panic("alloc_block_FF is not implemented yet");
+//return NULL;
 }
 //=========================================
 // [5] ALLOCATE BLOCK BY BEST FIT:
@@ -290,6 +292,11 @@ void free_block(void *va)
 {
 	if (va == NULL)
 		return;
+	if(va<=(void*)la)
+		fred = 1;
+	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
+		if(va==(void*)tail)
+			cprintf("here\n");
 	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)((uint32) va - (uint32) sizeOfMetaData());
 	struct BlockMetaData *prev = (struct BlockMetaData *)LIST_PREV(deAllocatedBlock);
 	deAllocatedBlock->is_free= 1;

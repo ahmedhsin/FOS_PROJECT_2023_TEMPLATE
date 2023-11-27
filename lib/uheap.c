@@ -48,11 +48,10 @@ void* malloc(uint32 size)
 	//TODO: [PROJECT'23.MS2 - #09] [2] USER HEAP - malloc() [User Side]
 	// Write your code here, remove the panic and write your code
 
-	if(size<=DYN_ALLOC_MAX_BLOCK_SIZE){
-		uint32 add= (uint32)alloc_block_FF(size);
-		//cprintf("%u\n",add);
-		return (void*)add;
-	}
+	if(size<=DYN_ALLOC_MAX_BLOCK_SIZE)
+		return alloc_block_FF(size);
+
+
 	if(size%PAGE_SIZE)
 		size+=PAGE_SIZE-size%PAGE_SIZE;
 	uint32 va = sys_get_limit()+PAGE_SIZE;
