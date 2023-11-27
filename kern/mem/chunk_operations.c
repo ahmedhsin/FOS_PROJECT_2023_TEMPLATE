@@ -167,7 +167,6 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			// Free the page from the Page File
 			pf_remove_env_page(e, virtual_address);
 
-			env_page_ws_invalidate(e,virtual_address);
 			}
 
 	}
