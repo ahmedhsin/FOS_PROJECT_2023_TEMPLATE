@@ -143,15 +143,31 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 
 		if (page_table != NULL) {
-			uint32 pa = page_table[PTX(virtual_address)];
-		if(pa/PAGE_SIZE)
-			unmap_frame(e->env_page_directory,virtual_address);
-		UNMARK(virtual_address, page_table);
-		// Free the page from the Page File
-		pf_remove_env_page(e, virtual_address);
-		// Check if the page is in the working set and remove it
-		env_page_ws_invalidate(e, virtual_address);
-		}
+
+			struct FrameInfo * fi =
+					get_frame_info(e->env_page_directory,virtual_address,&page_table);
+
+			struct WorkingSetElement *el = fi->element;
+
+			uint32 pa = to_physical_address(fi);
+			UNMARK(virtual_address, page_table);
+
+			// Check if the page is in the working set and remove it
+			if(pa/PAGE_SIZE){
+				unmap_frame(e->env_page_directory,virtual_address);
+				if (e->page_last_WS_element == el){
+					e->page_last_WS_element = LIST_NEXT(el);
+				}
+
+				LIST_REMOVE(&(e->page_WS_list), el);
+				kfree(el);
+				fi->element=NULL;
+				}
+
+			// Free the page from the Page File
+			pf_remove_env_page(e, virtual_address);
+
+			}
 
 	}
 }
