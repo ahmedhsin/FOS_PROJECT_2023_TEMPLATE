@@ -64,14 +64,14 @@ void *alloc_block(uint32 size, int ALLOC_STRATEGY)
 // 4) PRINT BLOCKS LIST:
 //===========================
 
-void print_blocks_list(struct MemBlock_LIST list)
+void print_blocks_list()
 {
 	cprintf("=========================================\n");
 	struct BlockMetaData *blk;
 	cprintf("\nDynAlloc Blocks List:\n");
-	LIST_FOREACH(blk, &list)
+	LIST_FOREACH(blk, &linkedListMemoryBlocks)
 	{
-		cprintf("(size: %d, isFree: %d)\n", blk->size, blk->is_free);
+		cprintf("(vaL %x, size: %d, isFree: %d)\n",blk, blk->size, blk->is_free);
 	}
 	cprintf("=========================================\n");
 }
@@ -84,6 +84,7 @@ void print_blocks_list(struct MemBlock_LIST list)
 //==================================================================================//
 //============================
 // Helper functions
+
 void *initializeMetaDataBlock(uint32 sAddress, uint32 size, uint32 free)
 {
 	struct BlockMetaData *intializeBlock = (struct BlockMetaData *)sAddress;
@@ -105,18 +106,44 @@ void printBlock (void * Address){
 	struct BlockMetaData *currentBlock = (struct BlockMetaData *)Address;
 	cprintf("Block : address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
 }
+void *next_free(struct BlockMetaData *blk){
+	if (linkedListMemoryBlocks.size == 0) return NULL;
+	struct BlockMetaData *tmp = (struct BlockMetaData *)(blk->size+(uint32)blk);
+	uint32 segbrk = (uint32)sbrk(0);
+	while((uint32)tmp < segbrk && !tmp->is_free){
+		tmp = (struct BlockMetaData *)(tmp->size+(uint32)tmp);
+	}
+	if (segbrk <= (uint32)tmp) return NULL;
+	if (tmp->is_free) return tmp;
+	return NULL;
+}
+void *prev_free(struct BlockMetaData *blk){
+	void *tmp = next_free(blk);
+	if (tmp != 0)
+		return LIST_PREV((struct BlockMetaData *)tmp);
+
+	return linkedListMemoryBlocks.lh_last;
+}
+bool is_adjacent(struct BlockMetaData *cur, struct BlockMetaData *blk){
+	if (cur == NULL || blk == NULL) return 0;
+	if ((uint32)(blk->size + (uint32)blk) == (uint32)(cur)) return 1;
+	if ((uint32)(cur->size + (uint32)cur) == (uint32)(blk)) return 1;
+	return 0;
+}
 //merges block at va with following one if it's free.
 void coalesce(void* va){
 	void* real_add = va-sizeOfMetaData();
 	struct BlockMetaData *blk1 = (struct BlockMetaData*) real_add;
 	if(!blk1->is_free)
 			return;
-	struct BlockMetaData *blk2 = (struct BlockMetaData *)LIST_NEXT(blk1);
+	struct BlockMetaData *blk2 = (struct BlockMetaData *)next_free(blk1);
+	
+	if(!is_adjacent(blk2, blk1)) blk2 = NULL;
 	if(blk2==NULL)
 		return;
 	if(!blk2->is_free)
 		return;
-	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
+	//cprintf("next : %x\n",blk2);
 	blk1->size+=blk2->size;
 	LIST_REMOVE(&linkedListMemoryBlocks,blk2);
 	clearMetaDataBlock(blk2);
@@ -132,24 +159,25 @@ void alloc(void* va, uint32 size){
 		blk->size = size;
 		LIST_INSERT_AFTER(&linkedListMemoryBlocks, blk, freeBlock);
 	}
+	LIST_REMOVE(&linkedListMemoryBlocks,blk);
 }
 
-void* new_block(uint32 size, int strategy){
-	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
-			void *oldSbrk = sbrk(0);
+void *new_block(uint32 size, int strategy)
+{
+	void *oldSbrk = sbrk(0);
 
+	if ((uint32)sbrk(size) == -1)
+		return NULL;
 
-	            if ((uint32)sbrk(size) == -1)
-	                return NULL;
+	struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk, (uint32)sbrk(0) - (uint32)oldSbrk, 1);
+	LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
+	if (!strategy)
+	{
+		alloc(addedBlock, size);
+		return addedBlock;
+	}
 
-	            struct BlockMetaData *addedBlock = (struct BlockMetaData *)initializeMetaDataBlock((uint32)oldSbrk,  (uint32)sbrk(0) - (uint32)oldSbrk, 1);
-	            LIST_INSERT_TAIL(&linkedListMemoryBlocks, addedBlock);
-	            if(!strategy){
-	            alloc(addedBlock,size);
-	            return addedBlock;
-	            }
-
-	        return alloc_block_BF(size);
+	return alloc_block_BF(size);
 }
 
 //============================
@@ -195,7 +223,7 @@ void *alloc_block_FF(uint32 size)
 	uint32 da_break = (uint32)sbrk(0);
 	initialize_dynamic_allocator(da_start, da_break - da_start);
 	}
-
+	//print_blocks_list(linkedListMemoryBlocks);
 	struct BlockMetaData *currentBlock, *firstFitBlock;
 	uint32 totalRequiredSize = size + sizeOfMetaData();
 	int isFound = 0;
@@ -203,16 +231,16 @@ void *alloc_block_FF(uint32 size)
 	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
 		//if(!fred&&la!=NULL)
 			//currentBlock = la;
-		if (isFound == 0 && currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1){
+		if (isFound == 0 && currentBlock->size >= totalRequiredSize){
 			isFound = 1;
 			firstFitBlock = currentBlock;
-			fred = f;
-			if(!f)
-				la = currentBlock;
-			break;
+			//fred = f;
+			//if(!f)
+			//	la = currentBlock;
+			//break;
 		}
-		if(currentBlock->is_free)
-			f = 1;
+		//if(currentBlock->is_free)
+		//	f = 1;
 	}
 
 	if (isFound){
@@ -288,21 +316,26 @@ void *alloc_block_NF(uint32 size)
 //===================================================
 // [8] FREE BLOCK WITH COALESCING:
 //===================================================
+
 void free_block(void *va)
 {
 	if (va == NULL)
 		return;
-	if(va<=(void*)la)
-		fred = 1;
-	 struct BlockMetaData *tail = LIST_LAST(&linkedListMemoryBlocks);
-		if(va==(void*)tail)
-			cprintf("here\n");
-	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)((uint32) va - (uint32) sizeOfMetaData());
-	struct BlockMetaData *prev = (struct BlockMetaData *)LIST_PREV(deAllocatedBlock);
-	deAllocatedBlock->is_free= 1;
+	//if (va <= (void *)la)
+	//	fred = 1;
+	
+	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)((uint32)va - (uint32)sizeOfMetaData());
+	struct BlockMetaData *prev = (struct BlockMetaData *)prev_free(deAllocatedBlock);
+	deAllocatedBlock->is_free = 1;
+	if (prev == NULL){
+		LIST_INSERT_HEAD(&linkedListMemoryBlocks, deAllocatedBlock);
+	}else{
+		LIST_INSERT_AFTER(&linkedListMemoryBlocks, prev, deAllocatedBlock);
+	}
 	coalesce(va);
-	if(prev!=NULL)
-		coalesce((void*)prev+sizeOfMetaData());
+	if (prev != NULL){
+		coalesce((void *)prev + sizeOfMetaData());
+	}
 }
 
 //=========================================
