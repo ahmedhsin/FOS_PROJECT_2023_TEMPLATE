@@ -137,6 +137,7 @@ void _main(void)
 				cprintf("malloc() #2.%d: WRONG FF ALLOC - alloc_block_FF return wrong address. Expected %x, Actual %x\n", i, expectedVAs[i] ,tstStartVAs[i]);
 				//break;
 			}
+			print_blocks_list();
 			*(tstStartVAs[i]) = 353 + i;
 			*(tstMidVAs[i]) = 353 + i;
 			*(tstEndVAs[i]) = 353 + i;
@@ -145,7 +146,7 @@ void _main(void)
 		if(get_block_size(tstStartVAs[1]) != allocSizes[0])
 		{
 			is_correct = 0;
-			cprintf("malloc() #3: WRONG FF ALLOC - make sure if the remaining free space doesn’t fit a dynamic allocator block, then this area should be added to the allocated area and counted as internal fragmentation\n");
+			cprintf("malloc() #3: WRONG FF ALLOC - make sure if the remaining free space doesnï¿½t fit a dynamic allocator block, then this area should be added to the allocated area and counted as internal fragmentation\n");
 			//break;
 		}
 		if (is_correct)
