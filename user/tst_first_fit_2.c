@@ -235,6 +235,7 @@ void _main(void)
 		if(va != NULL)
 		{
 			is_correct = 0;
+			atomic_cprintf("%u\n",va);
 			cprintf("malloc() #7: WRONG FF ALLOC - alloc_block_FF return an address while it's expected to return NULL since it reaches the hard limit.\n");
 		}
 		if (is_correct)
