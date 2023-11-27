@@ -215,7 +215,6 @@ void _main(void)
 
 		//Fill the remaining area
 		uint32 numOfRem2KBAllocs = ((USER_HEAP_START + DYN_ALLOC_MAX_SIZE - (uint32)sbrk(0)) / PAGE_SIZE) * 2;
-		atomic_cprintf("%d\n",numOfRem2KBAllocs);
 		for (int i = 0; i < numOfRem2KBAllocs; ++i)
 		{
 			va = malloc(actualSize);
@@ -235,7 +234,6 @@ void _main(void)
 		if(va != NULL)
 		{
 			is_correct = 0;
-			atomic_cprintf("%u\n",va);
 			cprintf("malloc() #7: WRONG FF ALLOC - alloc_block_FF return an address while it's expected to return NULL since it reaches the hard limit.\n");
 		}
 		if (is_correct)
