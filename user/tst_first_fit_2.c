@@ -137,7 +137,6 @@ void _main(void)
 				cprintf("malloc() #2.%d: WRONG FF ALLOC - alloc_block_FF return wrong address. Expected %x, Actual %x\n", i, expectedVAs[i] ,tstStartVAs[i]);
 				//break;
 			}
-			print_blocks_list();
 			*(tstStartVAs[i]) = 353 + i;
 			*(tstMidVAs[i]) = 353 + i;
 			*(tstEndVAs[i]) = 353 + i;

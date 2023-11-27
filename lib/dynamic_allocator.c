@@ -328,7 +328,7 @@ void free_block(void *va)
 	struct BlockMetaData *prev = (struct BlockMetaData *)prev_free(deAllocatedBlock);
 	deAllocatedBlock->is_free = 1;
 	if (prev == NULL){
-		LIST_INSERT_TAIL(&linkedListMemoryBlocks, deAllocatedBlock);
+		LIST_INSERT_HEAD(&linkedListMemoryBlocks, deAllocatedBlock);
 	}else{
 		LIST_INSERT_AFTER(&linkedListMemoryBlocks, prev, deAllocatedBlock);
 	}
