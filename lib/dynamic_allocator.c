@@ -137,7 +137,7 @@ void coalesce(void* va){
 	if(!blk1->is_free)
 			return;
 	struct BlockMetaData *blk2 = (struct BlockMetaData *)next_free(blk1);
-	
+
 	if(!is_adjacent(blk2, blk1)) blk2 = NULL;
 	if(blk2==NULL)
 		return;
@@ -323,7 +323,7 @@ void free_block(void *va)
 		return;
 	//if (va <= (void *)la)
 	//	fred = 1;
-	
+
 	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)((uint32)va - (uint32)sizeOfMetaData());
 	struct BlockMetaData *prev = (struct BlockMetaData *)prev_free(deAllocatedBlock);
 	deAllocatedBlock->is_free = 1;
