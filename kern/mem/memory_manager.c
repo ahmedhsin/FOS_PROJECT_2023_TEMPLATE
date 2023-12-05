@@ -419,7 +419,9 @@ struct FrameInfo * get_frame_info(uint32 *ptr_page_directory, uint32 virtual_add
 		uint32 index_page_table = PTX(virtual_address);
 		//cprintf(".gfi .2\n");
 		uint32 page_table_entry = (*ptr_page_table)[index_page_table];
-		if( page_table_entry != 0)
+		/*2023 el7:)*///Make sure it has a frame number other than 0 (not just a marked page from the page allocator)
+		//if( page_table_entry != 0)
+		if( (page_table_entry & ~0xFFF) != 0)
 		{
 			//cprintf(".gfi .3\n");
 			return to_frame_info( EXTRACT_ADDRESS ( page_table_entry ) );
@@ -453,7 +455,6 @@ void unmap_frame(uint32 *ptr_page_directory, uint32 virtual_address)
 		if (ptr_frame_info->isBuffered && !CHECK_IF_KERNEL_ADDRESS((uint32)virtual_address))
 			cprintf("WARNING: Freeing BUFFERED frame at va %x!!!\n", virtual_address) ;
 		decrement_references(ptr_frame_info);
-
 
 		/*********************************************************************************/
 		/*NEW'23 el7:)
