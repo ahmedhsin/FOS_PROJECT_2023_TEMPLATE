@@ -106,24 +106,7 @@ void printBlock (void * Address){
 	struct BlockMetaData *currentBlock = (struct BlockMetaData *)Address;
 	cprintf("Block : address : %x , isFree : %d , size : %d \n", (void *) currentBlock, currentBlock->is_free, currentBlock->size);
 }
-void *next_free(struct BlockMetaData *blk){
-	if (linkedListMemoryBlocks.size == 0) return NULL;
-	struct BlockMetaData *tmp = (struct BlockMetaData *)(blk->size+(uint32)blk);
-	uint32 segbrk = (uint32)sbrk(0);
-	while((uint32)tmp < segbrk && !tmp->is_free){
-		tmp = (struct BlockMetaData *)(tmp->size+(uint32)tmp);
-	}
-	if (segbrk <= (uint32)tmp) return NULL;
-	if (tmp->is_free) return tmp;
-	return NULL;
-}
-void *prev_free(struct BlockMetaData *blk){
-	void *tmp = next_free(blk);
-	if (tmp != 0)
-		return LIST_PREV((struct BlockMetaData *)tmp);
 
-	return linkedListMemoryBlocks.lh_last;
-}
 bool is_adjacent(struct BlockMetaData *cur, struct BlockMetaData *blk){
 	if (cur == NULL || blk == NULL) return 0;
 	if ((uint32)(blk->size + (uint32)blk) == (uint32)(cur)) return 1;
@@ -136,17 +119,23 @@ void coalesce(void* va){
 	struct BlockMetaData *blk1 = (struct BlockMetaData*) real_add;
 	if(!blk1->is_free)
 			return;
-	struct BlockMetaData *blk2 = (struct BlockMetaData *)next_free(blk1);
-	
-	if(!is_adjacent(blk2, blk1)) blk2 = NULL;
-	if(blk2==NULL)
+	struct BlockMetaData *blk2 = LIST_NEXT(blk1);
+
+	if(!is_adjacent(blk2, blk1))
 		return;
-	if(!blk2->is_free)
-		return;
-	//cprintf("next : %x\n",blk2);
+
 	blk1->size+=blk2->size;
 	LIST_REMOVE(&linkedListMemoryBlocks,blk2);
 	clearMetaDataBlock(blk2);
+}
+
+struct BlockMetaData* find_next(struct BlockMetaData* blk){
+	struct BlockMetaData* cur;
+	LIST_FOREACH(cur,&linkedListMemoryBlocks)
+		if(cur>blk)
+			return cur;
+
+	return blk;
 }
 
 void alloc(void* va, uint32 size){
@@ -229,18 +218,10 @@ void *alloc_block_FF(uint32 size)
 	int isFound = 0;
 	uint8 f = 0;
 	LIST_FOREACH(currentBlock, &linkedListMemoryBlocks){
-		//if(!fred&&la!=NULL)
-			//currentBlock = la;
 		if (isFound == 0 && currentBlock->size >= totalRequiredSize){
 			isFound = 1;
 			firstFitBlock = currentBlock;
-			//fred = f;
-			//if(!f)
-			//	la = currentBlock;
-			//break;
 		}
-		//if(currentBlock->is_free)
-		//	f = 1;
 	}
 
 	if (isFound){
@@ -254,8 +235,6 @@ void *alloc_block_FF(uint32 size)
 			return ret;
 		return ret + sizeOfMetaData();
 	}
-	//panic("alloc_block_FF is not implemented yet");
-//return NULL;
 }
 //=========================================
 // [5] ALLOCATE BLOCK BY BEST FIT:
@@ -272,7 +251,7 @@ void *alloc_block_BF(uint32 size)
 
     LIST_FOREACH(currentBlock, &linkedListMemoryBlocks)
     {
-        if (currentBlock->size >= totalRequiredSize && currentBlock->is_free == 1)
+        if (currentBlock->size >= totalRequiredSize)
         {
             if (currentBlock->size < minFreeSize)
             {
@@ -321,18 +300,28 @@ void free_block(void *va)
 {
 	if (va == NULL)
 		return;
-	//if (va <= (void *)la)
-	//	fred = 1;
-	
 	struct BlockMetaData *deAllocatedBlock = (struct BlockMetaData *)((uint32)va - (uint32)sizeOfMetaData());
-	struct BlockMetaData *prev = (struct BlockMetaData *)prev_free(deAllocatedBlock);
+	if(deAllocatedBlock->is_free)
+		return;
 	deAllocatedBlock->is_free = 1;
-	if (prev == NULL){
-		LIST_INSERT_HEAD(&linkedListMemoryBlocks, deAllocatedBlock);
-	}else{
-		LIST_INSERT_AFTER(&linkedListMemoryBlocks, prev, deAllocatedBlock);
+
+	struct BlockMetaData* cur;
+	uint8 inserted = 0;
+	if(LIST_EMPTY(&linkedListMemoryBlocks)){
+		LIST_INSERT_HEAD(&linkedListMemoryBlocks,deAllocatedBlock);
+		inserted = 1;
 	}
+	else LIST_FOREACH(cur,&linkedListMemoryBlocks){
+		if(cur>deAllocatedBlock){
+			LIST_INSERT_BEFORE(&linkedListMemoryBlocks,cur,deAllocatedBlock);
+			inserted = 1;
+			break;
+		}
+	}
+	if(!inserted)
+		LIST_INSERT_TAIL(&linkedListMemoryBlocks,deAllocatedBlock);
 	coalesce(va);
+	struct BlockMetaData *prev = LIST_PREV(deAllocatedBlock);
 	if (prev != NULL){
 		coalesce((void *)prev + sizeOfMetaData());
 	}
@@ -366,7 +355,6 @@ void *realloc_block_FF(void* va, uint32 new_size){
 			struct BlockMetaData* holder = (struct BlockMetaData*) (blk_add+real_size);
 			holder->size = cur_block->size-real_size;
 			holder->is_free = 0;
-			LIST_INSERT_AFTER(&linkedListMemoryBlocks,cur_block,holder);
 			free_block(holder+1);
 
 		cur_block->size = real_size;
@@ -374,8 +362,9 @@ void *realloc_block_FF(void* va, uint32 new_size){
 		return va;
 	}
 
-	struct BlockMetaData *next_block  =LIST_NEXT(cur_block);
-	if(next_block->is_free&&next_block->size+cur_block->size>=real_size){
+	struct BlockMetaData *next_block  = find_next(cur_block);
+
+	if(is_adjacent(cur_block,next_block)&&next_block->size+cur_block->size>=real_size){
 		cur_block->size+=next_block->size;
 		LIST_REMOVE(&linkedListMemoryBlocks,next_block);
 		clearMetaDataBlock(next_block);
