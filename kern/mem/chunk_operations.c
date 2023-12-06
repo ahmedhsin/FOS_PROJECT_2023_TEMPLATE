@@ -137,23 +137,25 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 	/*==========================================================================*/
 	//TODO: [PROJECT'23.MS2 - #12] [2] USER HEAP - free_user_mem() [Kernel Side]
 	uint32 last_address = virtual_address + size;
+	int x = 1;
 	for (; virtual_address != last_address; virtual_address += PAGE_SIZE) {
 		uint32* page_table;
 		get_page_table(e->env_page_directory,virtual_address,&page_table);
 
 
 		if (page_table != NULL) {
-
 			struct FrameInfo * fi =
 					get_frame_info(e->env_page_directory,virtual_address,&page_table);
 
-			struct WorkingSetElement *el = fi->element;
-
-			uint32 pa = to_physical_address(fi);
 			UNMARK(virtual_address, page_table);
 
+
 			// Check if the page is in the working set and remove it
-			if(pa/PAGE_SIZE){
+			if((uint32)fi/PAGE_SIZE){
+				uint32 pa = to_physical_address(fi);
+
+				struct WorkingSetElement *el = fi->element;
+
 				unmap_frame(e->env_page_directory,virtual_address);
 				if (e->page_last_WS_element == el){
 					e->page_last_WS_element = LIST_NEXT(el);
