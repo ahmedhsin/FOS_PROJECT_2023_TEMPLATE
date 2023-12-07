@@ -387,7 +387,7 @@ int map_frame(uint32 *ptr_page_directory, struct FrameInfo *ptr_frame_info, uint
 			unmap_frame(ptr_page_directory , virtual_address);
 	}
 	ptr_frame_info->references++;
-
+	ptr_frame_info->va = virtual_address;
 	/*********************************************************************************/
 	/*NEW'23 el7:)
 	 * TODO: [DONE] map_frame(): KEEP THE VALUES OF THE AVAILABLE BITS*/
@@ -453,7 +453,7 @@ void unmap_frame(uint32 *ptr_page_directory, uint32 virtual_address)
 		if (ptr_frame_info->isBuffered && !CHECK_IF_KERNEL_ADDRESS((uint32)virtual_address))
 			cprintf("WARNING: Freeing BUFFERED frame at va %x!!!\n", virtual_address) ;
 		decrement_references(ptr_frame_info);
-
+		ptr_frame_info->va = 0;
 		/*********************************************************************************/
 		/*NEW'23 el7:)
 		 * TODO: [DONE] unmap_frame(): KEEP THE VALUES OF THE AVAILABLE BITS*/
