@@ -128,7 +128,13 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 		{
 			//TODO: [PROJECT'23.MS3 - #1] [1] PAGE FAULT HANDLER - FIFO Replacement
 			// Write your code here, remove the panic and write your code
-			panic("page_fault_handler() FIFO Replacement is not implemented yet...!!");
+			//panic("page_fault_handler() FIFO Replacement is not implemented yet...!!");
+
+
+
+
+
+
 		}
 		if(isPageReplacmentAlgorithmLRU(PG_REP_LRU_LISTS_APPROX))
 		{
