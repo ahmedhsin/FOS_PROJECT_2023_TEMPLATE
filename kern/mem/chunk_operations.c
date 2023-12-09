@@ -146,7 +146,6 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 		if (page_table != NULL) {
 			struct FrameInfo * fi =
 					get_frame_info(e->env_page_directory,virtual_address,&page_table);
-
 			UNMARK(virtual_address, page_table);
 
 
@@ -155,7 +154,6 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 				uint32 pa = to_physical_address(fi);
 
 				struct WorkingSetElement *el = fi->element;
-
 				unmap_frame(e->env_page_directory,virtual_address);
 				if (e->page_last_WS_element == el){
 					e->page_last_WS_element = LIST_NEXT(el);

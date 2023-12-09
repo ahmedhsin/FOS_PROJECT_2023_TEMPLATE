@@ -421,7 +421,6 @@ struct FrameInfo * get_frame_info(uint32 *ptr_page_directory, uint32 virtual_add
 		uint32 page_table_entry = (*ptr_page_table)[index_page_table];
 		/*2023 el7:)*///Make sure it has a frame number other than 0 (not just a marked page from the page allocator)
 		if( (page_table_entry & ~0xFFF) != 0)
-
 			return to_frame_info( EXTRACT_ADDRESS ( page_table_entry ) );
 
 		return 0;
@@ -454,6 +453,7 @@ void unmap_frame(uint32 *ptr_page_directory, uint32 virtual_address)
 			cprintf("WARNING: Freeing BUFFERED frame at va %x!!!\n", virtual_address) ;
 		decrement_references(ptr_frame_info);
 		ptr_frame_info->va = 0;
+
 		/*********************************************************************************/
 		/*NEW'23 el7:)
 		 * TODO: [DONE] unmap_frame(): KEEP THE VALUES OF THE AVAILABLE BITS*/
