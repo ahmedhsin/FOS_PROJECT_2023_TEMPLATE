@@ -390,18 +390,12 @@ void fault_handler(struct Trapframe *tf)
 			uint32 isReadOnly = !(per & PERM_WRITEABLE) ;
 			uint32 isKernal  = !(per & PERM_USER) ;
 			uint32 isPresent = (per&PERM_PRESENT);
-			bool kill = 0;
+			bool kill = isKernal || isReadOnly;
+			kill&=isPresent;
+			kill|=!isMarked && inHeap;
+			if (kill)
+				sched_kill_env(faulted_env->env_id);
 
-			if ((isKernal || isReadOnly))
-				kill = 1;
-
-			if(!isPresent)
-				kill = 0;
-			if ((!isMarked && inHeap))
-				kill = 1;
-
-
-			if(kill) sched_kill_env(faulted_env->env_id);
 			/*============================================================================================*/
 		}
 

@@ -387,7 +387,7 @@ int map_frame(uint32 *ptr_page_directory, struct FrameInfo *ptr_frame_info, uint
 			unmap_frame(ptr_page_directory , virtual_address);
 	}
 	ptr_frame_info->references++;
-
+	ptr_frame_info->va = virtual_address;
 	/*********************************************************************************/
 	/*NEW'23 el7:)
 	 * TODO: [DONE] map_frame(): KEEP THE VALUES OF THE AVAILABLE BITS*/
@@ -420,12 +420,9 @@ struct FrameInfo * get_frame_info(uint32 *ptr_page_directory, uint32 virtual_add
 		//cprintf(".gfi .2\n");
 		uint32 page_table_entry = (*ptr_page_table)[index_page_table];
 		/*2023 el7:)*///Make sure it has a frame number other than 0 (not just a marked page from the page allocator)
-		//if( page_table_entry != 0)
 		if( (page_table_entry & ~0xFFF) != 0)
-		{
-			//cprintf(".gfi .3\n");
 			return to_frame_info( EXTRACT_ADDRESS ( page_table_entry ) );
-		}
+
 		return 0;
 	}
 	return 0;
@@ -455,6 +452,7 @@ void unmap_frame(uint32 *ptr_page_directory, uint32 virtual_address)
 		if (ptr_frame_info->isBuffered && !CHECK_IF_KERNEL_ADDRESS((uint32)virtual_address))
 			cprintf("WARNING: Freeing BUFFERED frame at va %x!!!\n", virtual_address) ;
 		decrement_references(ptr_frame_info);
+		ptr_frame_info->va = 0;
 
 		/*********************************************************************************/
 		/*NEW'23 el7:)
