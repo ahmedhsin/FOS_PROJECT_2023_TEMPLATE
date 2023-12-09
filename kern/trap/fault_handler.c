@@ -113,15 +113,17 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 			// TODO: [PROJECT'23.MS2 - #15] [3] PAGE FAULT HANDLER - Placement
 			//  Write your code here, remove the panic and write your code
 			// panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
-			
+
 			struct WorkingSetElement *newWorkingElement = env_page_ws_list_create_element(curenv, fault_va);
+			//f063cd28
+
 			LIST_INSERT_TAIL(&curenv->page_WS_list, newWorkingElement);
 
 			if ((curenv->page_WS_list.size) == (curenv->page_WS_max_size))
 				curenv->page_last_WS_element = curenv->page_WS_list.lh_first;
 			else
 				curenv->page_last_WS_element = NULL;
-			    fi->element = newWorkingElement;
+			 fi->element = newWorkingElement;
 		}else
 		{
 			// TODO: [PROJECT'23.MS3 - #1] [1] PAGE FAULT HANDLER - FIFO Replacement
@@ -144,7 +146,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 				curenv->page_last_WS_element = LIST_NEXT(firstElement);
 			else
 				curenv->page_last_WS_element = curenv->page_WS_list.lh_first;
-
+			 fi->element = firstElement;
 		}
 	}
 	else
