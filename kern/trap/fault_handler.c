@@ -88,6 +88,24 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 	{
 		//this line takes around 5hr to discover :) ahmedhsin
 		fault_va = ROUNDDOWN(fault_va, PAGE_SIZE);
+		struct FrameInfo *fr = NULL;
+		allocate_frame(&fr);
+		map_frame(curenv->env_page_directory, fr, fault_va, PERM_WRITEABLE);
+		int ret = pf_read_env_page(curenv, (void *)fault_va);
+		if (ret == E_PAGE_NOT_EXIST_IN_PF)
+		{
+			uint32 inHeap = (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX);
+			uint32 inStack = (fault_va >= USTACKBOTTOM && fault_va < USTACKTOP);
+			if (!(inHeap || inStack))
+			{
+				unmap_frame(curenv->env_page_directory, fault_va);
+				sched_kill_env(curenv->env_id);
+			}
+		}
+		uint32 *pt;
+		get_page_table(curenv->env_page_directory, fault_va, &pt);
+		struct FrameInfo *fi = get_frame_info(curenv->env_page_directory, fault_va, &pt);
+		pt_set_page_permissions(curenv->env_page_directory, fault_va, PERM_PRESENT | PERM_USER | PERM_WRITEABLE, 0);
 		if (wsSize < (curenv->page_WS_max_size))
 		{
 
@@ -95,24 +113,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 			// TODO: [PROJECT'23.MS2 - #15] [3] PAGE FAULT HANDLER - Placement
 			//  Write your code here, remove the panic and write your code
 			// panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
-			struct FrameInfo *fr = NULL;
-			allocate_frame(&fr);
-			map_frame(curenv->env_page_directory, fr, fault_va, PERM_WRITEABLE);
-			int ret = pf_read_env_page(curenv, (void *)fault_va);
-			if (ret == E_PAGE_NOT_EXIST_IN_PF)
-			{
-				uint32 inHeap = (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX);
-				uint32 inStack = (fault_va >= USTACKBOTTOM && fault_va < USTACKTOP);
-				if (!(inHeap || inStack))
-				{
-					unmap_frame(curenv->env_page_directory, fault_va);
-					sched_kill_env(curenv->env_id);
-				}
-			}
-			uint32 *pt;
-			get_page_table(curenv->env_page_directory, fault_va, &pt);
-			struct FrameInfo *fi = get_frame_info(curenv->env_page_directory, fault_va, &pt);
-			pt_set_page_permissions(curenv->env_page_directory, fault_va, PERM_PRESENT | PERM_USER | PERM_WRITEABLE, 0);
+			
 			struct WorkingSetElement *newWorkingElement = env_page_ws_list_create_element(curenv, fault_va);
 			LIST_INSERT_TAIL(&curenv->page_WS_list, newWorkingElement);
 
@@ -127,7 +128,6 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 			//  Write your code here, remove the panic and write your code
 			//panic("page_fault_handler() FIFO Replacement is not implemented yet...!!");
 
-
 			struct WorkingSetElement *firstElement = curenv->page_last_WS_element;
 			//LIST_REMOVE(&curenv->page_WS_list, firstElement);
 			int per = pt_get_page_permissions(curenv->env_page_directory, firstElement->virtual_address);
@@ -137,24 +137,13 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 					int ret = pf_update_env_page(curenv, firstElement->virtual_address, fr);
 		    }
 			unmap_frame(curenv->env_page_directory, firstElement->virtual_address);
-			struct FrameInfo *fr = NULL;
-			allocate_frame(&fr);
-			map_frame(curenv->env_page_directory, fr, fault_va, PERM_WRITEABLE);
-			int ret = pf_read_env_page(curenv, (void *)fault_va);
-			if (ret == E_PAGE_NOT_EXIST_IN_PF)
-			{
-			  uint32 inHeap = (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX);
-			  uint32 inStack = (fault_va >= USTACKBOTTOM && fault_va < USTACKTOP);
-			  if (!(inHeap || inStack))
-				{
-					unmap_frame(curenv->env_page_directory, fault_va);
-					sched_kill_env(curenv->env_id);
-				}
-			}
 			firstElement->virtual_address=fault_va;
-			pt_set_page_permissions(curenv->env_page_directory, fault_va, PERM_PRESENT | PERM_USER | PERM_WRITEABLE, 0);
+			pt_set_page_permissions(curenv->env_page_directory, fault_va, PERM_PRESENT, 0);
 			//LIST_INSERT_HEAD(&curenv->page_WS_list, firstElement);
-			curenv->page_last_WS_element = LIST_NEXT(firstElement);
+			if (LIST_NEXT(firstElement) != NULL)
+				curenv->page_last_WS_element = LIST_NEXT(firstElement);
+			else
+				curenv->page_last_WS_element = curenv->page_WS_list.lh_first;
 
 		}
 	}
