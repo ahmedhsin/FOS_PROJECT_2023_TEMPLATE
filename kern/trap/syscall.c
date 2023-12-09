@@ -518,7 +518,12 @@ int sys_get_limit(){
 
 	return curenv->hard_limit;
 }
+void sys_env_set_nice(int nice_value){
 
+  env_set_nice(curenv,nice_value);
+
+
+}
 /**************************************************************************/
 /************************* SYSTEM CALLS HANDLER ***************************/
 /**************************************************************************/
@@ -535,28 +540,26 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		return (uint32)sys_sbrk((int)a1);
 		break;
 	case SYS_allocate_user_mem :
-
-
 		if (a1 == 0 ||a1+a2 >= USER_LIMIT )
-
-		    sched_kill_env(curenv->env_id);
-
+		sched_kill_env(curenv->env_id);
 		sys_allocate_user_mem(a1,a2);
-
 		return 0;
 		break;
 	case SYS_free_user_mem :
-
 		if (a1 == 0 || a1+a2 >= USER_LIMIT )
-
-	       sched_kill_env(curenv->env_id);
-
+	    sched_kill_env(curenv->env_id);
 		sys_free_user_mem(a1,a2);
 		return 0;
 		break;
 	case SYS_get_Limit :
 		  return sys_get_limit();
           break;
+
+	case SYS_env_set_nice :
+		sys_env_set_nice((int)a1);
+		return 0;
+		break;
+
 	//=====================================================================
 	case SYS_cputs:
 		sys_cputs((const char*)a1,a2,(uint8)a3);
