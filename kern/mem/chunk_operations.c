@@ -155,10 +155,23 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 				struct WorkingSetElement *el = fi->element;
 				unmap_frame(e->env_page_directory,virtual_address);
-				if (e->page_last_WS_element == el){
-					e->page_last_WS_element = LIST_NEXT(el);
-				}
 
+
+				if(e->page_WS_list.size==e->page_WS_max_size){
+					struct WorkingSetElement* s = e->page_WS_list.lh_first;
+					s->prev_next_info.le_prev = e->page_WS_list.lh_last;
+					e->page_WS_list.lh_last->prev_next_info.le_next = s;
+					if(e->page_last_WS_element==el)
+						e->page_last_WS_element = LIST_NEXT(el);
+
+					struct WorkingSetElement* prv = LIST_PREV(e->page_last_WS_element);
+					if(prv!=NULL)
+						LIST_NEXT(prv) = NULL,
+						e->page_WS_list.lh_last = prv,
+						LIST_PREV(e->page_last_WS_element) = NULL;
+					e->page_WS_list.lh_first = e->page_last_WS_element;
+				}
+				e->page_last_WS_element = NULL;
 				LIST_REMOVE(&(e->page_WS_list), el);
 				kfree(el);
 				fi->element=NULL;
