@@ -112,7 +112,9 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 			// TODO: [PROJECT'23.MS2 - #15] [3] PAGE FAULT HANDLER - Placement
 			//  Write your code here, remove the panic and write your code
 			// panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
+
 			struct WorkingSetElement *newWorkingElement = env_page_ws_list_create_element(curenv, fault_va);
+
 
 			LIST_INSERT_TAIL(&curenv->page_WS_list, newWorkingElement);
 
