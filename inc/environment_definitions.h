@@ -7,6 +7,7 @@
 #include <inc/queue.h>
 #include <inc/trap.h>
 #include <inc/memlayout.h>
+#include<inc/fixed_point.h>
 
 // An environment ID 'envid_t' has three parts:
 //
@@ -77,6 +78,7 @@ struct SharingVarInfo
 LIST_HEAD(WS_List, WorkingSetElement);		// Declares 'struct WS_list'
 //======================================================================
 
+fixed_point_t load;
 struct Env {
 	//================
 	/*MAIN INFO...*/
@@ -88,6 +90,8 @@ struct Env {
 	//uint32 HARD_LIMIT;
 	unsigned env_status;			// Status of the environment
 	int priority;					// Current priority
+	int nice;
+	fixed_point_t recent;
 	char prog_name[PROGNAMELEN];	// Program name (to print it via USER.cprintf in multitasking)
 
 	//================

@@ -55,6 +55,7 @@ void _main(void)
 	for (i = 0 ; i < PAGE_SIZE*10 ; i+=PAGE_SIZE/2)
 	{
 		arr[i] = 'A' ;
+
 		/*2016: this BUGGY line is REMOVED el7! it overwrites the KERNEL CODE :( !!!*/
 		//*ptr = *ptr2 ;
 		//ptr++ ; ptr2++ ;
@@ -80,7 +81,6 @@ void _main(void)
 		tempArr[c] = 'a';
 	}
 
-	//cprintf("2\n");
 
 	sys_free_user_mem((uint32)tempArr, tempArrSize);
 

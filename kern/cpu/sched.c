@@ -164,9 +164,10 @@ void sched_init_BSD(uint8 numOfLevels, uint8 quantum)
 #if USE_KHEAP
 	//TODO: [PROJECT'23.MS3 - #4] [2] BSD SCHEDULER - sched_init_BSD
 	//Your code is here
-	//Comment the following line
-	panic("Not implemented yet");
 
+	env_ready_queues = (struct Env_Queue*)kmalloc(sizeof(struct Env_Queue)*numOfLevels);
+	*quantums = quantum;
+	num_of_ready_queues = numOfLevels;
 	//=========================================
 	//DON'T CHANGE THESE LINES=================
 	scheduler_status = SCH_STOPPED;
@@ -194,7 +195,9 @@ struct Env* fos_scheduler_BSD()
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - fos_scheduler_BSD
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+	for(int i = 0; i <num_of_ready_queues;i++)
+		if(env_ready_queues[i].size)
+			return env_ready_queues[i].lh_first;
 	return NULL;
 }
 
@@ -206,9 +209,9 @@ void clock_interrupt_handler()
 {
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - Your code is here
 	{
-
-
-
+		fixed_point_t l2 = fix_scale(load,2);
+		fixed_point_t a = fix_div(l2,fix_add(l2,fix_int(1)));
+		curenv->recent = fix_add(fix_mul(a,curenv->recent),fix_int(curenv->nice));
 	}
 
 
