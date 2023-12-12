@@ -14,6 +14,28 @@
 extern void cleanup_buffers(struct Env* e);
 //================
 
+
+//=================================================================================//
+//============================== MORE FUNCTIONS XD ==================================//
+//=================================================================================//
+
+void calc_load(){
+	fixed_point_t cur = fix_unscale(fix_scale(load,59),60);
+	uint32 cnt = 0;
+	for(int i = 0; i<num_of_ready_queues;i++)
+		cnt+=env_ready_queues[i].size;
+	fixed_point_t nxt = fix_unscale(fix_int(cnt),60);
+	load = fix_add(cur,nxt);
+}
+void calc_pri(struct Env* e){
+	curenv->priority  = PRI_MAX - fix_round(fix_unscale(curenv->recent, 4)) - (curenv->nice*2) ;
+}
+void calc_recent(struct Env* e){
+	fixed_point_t a = fix_scale(load,2);
+	fixed_point_t coeff = fix_div(a,fix_add(a,fix_int(1)));
+	e->recent = fix_add(fix_mul(e->recent,coeff),fix_int(e->nice));
+}
+
 //=================================================================================//
 //============================== QUEUE FUNCTIONS ==================================//
 //=================================================================================//
