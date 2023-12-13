@@ -9,7 +9,7 @@ _main(void)
 {
 	int i1=0;
 	char buff1[256];
-	i1 = 30;
+	i1 = 40;
 
 	int res = fibonacci(i1) ;
 
