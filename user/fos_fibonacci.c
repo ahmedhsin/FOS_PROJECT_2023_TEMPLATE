@@ -9,8 +9,7 @@ _main(void)
 {
 	int i1=0;
 	char buff1[256];
-	atomic_readline("Please enter Fibonacci index:", buff1);
-	i1 = strtol(buff1, NULL, 10);
+	i1 = 30;
 
 	int res = fibonacci(i1) ;
 

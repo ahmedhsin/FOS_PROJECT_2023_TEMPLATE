@@ -210,6 +210,7 @@ void clock_interrupt_handler()
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - Your code is here
 	{
 
+		cprintf("%u ",curenv->env_id);
 		calc_recent(curenv);
 
 		uint32 t = ticks*(*quantums)/1000;
@@ -234,6 +235,8 @@ void clock_interrupt_handler()
 						LIST_REMOVE(&env_ready_queues[i], e);
 						LIST_INSERT_TAIL(&env_ready_queues[i], e);
 					}
+					if(e==env_ready_queues[i].lh_last)
+						break;
 					e = nxt;
 				}
 			}

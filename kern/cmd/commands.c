@@ -604,7 +604,6 @@ int command_sch_BSD(int number_of_arguments, char **arguments)
 	uint8 quantum = strtol(arguments[2], NULL, 10);
 
 	sched_init_BSD(numOfLevels, quantum);
-	cprintf("!");
 	cprintf("Scheduler is now set to BSD with %d levels & quantum = %d\n", numOfLevels, quantum);
 	cprintf("\n");
 	return 0;
