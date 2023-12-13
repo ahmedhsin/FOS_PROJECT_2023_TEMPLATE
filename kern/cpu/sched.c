@@ -210,9 +210,9 @@ void clock_interrupt_handler()
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - Your code is here
 	{
 
-		calc_recent(curenv);
-
+		curenv->recent = fix_add(curenv->recent,fix_int(1));
 		uint32 t = ticks*(*quantums)/1000;
+
 
 		struct Env* e;
 		if(t!=(ticks-1)*(*quantums)/1000){
@@ -232,8 +232,12 @@ void clock_interrupt_handler()
 					calc_pri(e);
 					if(e->priority!=i){
 						LIST_REMOVE(&env_ready_queues[i], e);
-						LIST_INSERT_TAIL(&env_ready_queues[i], e);
+
+						LIST_INSERT_TAIL(&env_ready_queues[e->priority], e);
 					}
+					if(e==env_ready_queues[i].lh_last)
+						break;
+
 					e = nxt;
 				}
 			}
