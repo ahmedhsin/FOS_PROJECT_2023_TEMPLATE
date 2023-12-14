@@ -578,6 +578,8 @@ void env_set_nice(struct Env* e, int nice_value)
 	//Your code is here
 	//Comment the following line
 	e->nice = nice_value;
+	if(e->env_status!=ENV_NEW)
+		calc_pri(e);
 }
 int env_get_recent_cpu(struct Env* e)
 {
