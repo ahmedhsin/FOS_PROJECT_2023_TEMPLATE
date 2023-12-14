@@ -28,8 +28,7 @@ void _main(void)
 		cprintf("!!!! MERGE SORT !!!!\n");
 		cprintf("!!!!!!!!!!!!!!!!!!!!\n");
 		cprintf("\n");
-		readline("Enter the number of elements: ", Line);
-		int NumOfElements = strtol(Line, NULL, 10) ;
+		int NumOfElements = 10;
 		int *Elements = malloc(sizeof(int) * NumOfElements) ;
 		cprintf("Chose the initialization method:\n") ;
 		cprintf("a) Ascending\n") ;
@@ -38,7 +37,7 @@ void _main(void)
 		do
 		{
 			cprintf("Select: ") ;
-			Chose = getchar() ;
+			Chose = 'c' ;
 			cputchar(Chose);
 			cputchar('\n');
 		} while (Chose != 'a' && Chose != 'b' && Chose != 'c');
