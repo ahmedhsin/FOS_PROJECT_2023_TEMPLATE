@@ -195,9 +195,16 @@ struct Env* fos_scheduler_BSD()
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - fos_scheduler_BSD
 	//Your code is here
 	//Comment the following line
-	for(int i = num_of_ready_queues; i >=0;i--)
-		if(env_ready_queues[i].size)
-			return env_ready_queues[i].lh_first;
+	if(curenv!=NULL)
+		LIST_INSERT_TAIL(&env_ready_queues[curenv->priority],curenv);
+
+	for(int i = num_of_ready_queues-1; i >=0;i--)
+		if(env_ready_queues[i].size){
+			struct Env* holder = LIST_FIRST(&env_ready_queues[i]);
+			LIST_REMOVE(&env_ready_queues[i],holder);
+			return holder;
+		}
+	load = fix_int(0);
 	return NULL;
 }
 
@@ -212,8 +219,6 @@ void clock_interrupt_handler()
 
 		curenv->recent = fix_add(curenv->recent,fix_int(1));
 		uint32 t = ticks*(*quantums)/1000;
-
-
 		struct Env* e;
 		if(t!=(ticks-1)*(*quantums)/1000){
 			//new second
@@ -232,12 +237,10 @@ void clock_interrupt_handler()
 					calc_pri(e);
 					if(e->priority!=i){
 						LIST_REMOVE(&env_ready_queues[i], e);
-
 						LIST_INSERT_TAIL(&env_ready_queues[e->priority], e);
 					}
 					if(e==env_ready_queues[i].lh_last)
 						break;
-
 					e = nxt;
 				}
 			}
