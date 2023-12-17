@@ -159,15 +159,29 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 			// panic("page_fault_handler() LRU Replacement is not implemented yet...!!");
 			//*/
 			fault_va = ROUNDDOWN(fault_va, PAGE_SIZE);
-			bool inSecondList = 0;
-			struct WorkingSetElement *newWorkingElement;
-			LIST_FOREACH(newWorkingElement, &curenv->SecondList){
-				if (newWorkingElement->virtual_address == fault_va){
-					inSecondList = 1;
-					break;
+			struct WorkingSetElement *newWorkingElement = NULL, *wseTmp;
+			uint32 *pg_table;
+			struct FrameInfo *frame_i = NULL;
+			///////////////////////////////////////////////////////////////////////////////
+			//IMPORTANT THIS CONDTION RUN ONLY 1 TIME FOR EACH PROCESS NOT EVERY PAGE FAULT
+			///////////////////////////////////////////////////////////////////////////////
+			if (!curenv->isWsTracked){
+				LIST_FOREACH(wseTmp, &curenv->ActiveList){
+					frame_i = get_frame_info(curenv->env_page_directory, wseTmp->virtual_address, &pg_table);
+					frame_i->element = wseTmp;
 				}
+				wseTmp = NULL;
+				LIST_FOREACH(wseTmp, &curenv->SecondList){
+					frame_i = get_frame_info(curenv->env_page_directory, wseTmp->virtual_address, &pg_table);
+					frame_i->element = wseTmp;
+				}
+				curenv->isWsTracked = 1;
 			}
-			if (inSecondList){
+			///////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////
+			frame_i = get_frame_info(curenv->env_page_directory, fault_va, &pg_table);
+			if (frame_i && frame_i->element){
+				newWorkingElement = frame_i->element;
 				LIST_REMOVE(&curenv->SecondList, newWorkingElement);
 				pt_set_page_permissions(curenv->env_page_directory, fault_va, PERM_PRESENT, 0);
 				goto ARRIVE;
@@ -234,6 +248,7 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 				pt_set_page_permissions(curenv->env_page_directory, lastActive->virtual_address, 0, PERM_PRESENT);
 				LIST_INSERT_HEAD(&curenv->SecondList, lastActive);
 				LIST_INSERT_HEAD(&curenv->ActiveList, lastSecond);
+				fr->element = lastSecond;
 			}
 			// TODO: [PROJECT'23.MS3 - BONUS] [1] PAGE FAULT HANDLER - O(1) implementation of LRU replacement
 		}
