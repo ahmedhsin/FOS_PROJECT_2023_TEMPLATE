@@ -9,9 +9,32 @@
 #include <kern/tests/utilities.h>
 #include <kern/cmd/command_prompt.h>
 
+
 //void on_clock_update_WS_time_stamps();
 extern void cleanup_buffers(struct Env* e);
 //================
+
+
+//=================================================================================//
+//============================== MORE FUNCTIONS XD ==================================//
+//=================================================================================//
+
+void calc_load(){
+	fixed_point_t cur = fix_unscale(fix_scale(load,59),60);
+	uint32 cnt = 0;
+	for(int i = 0; i<num_of_ready_queues;i++)
+		cnt+=env_ready_queues[i].size;
+	fixed_point_t nxt = fix_unscale(fix_int(cnt),60);
+	load = fix_add(cur,nxt);
+}
+void calc_pri(struct Env* e){
+	curenv->priority  = PRI_MAX - fix_round(fix_unscale(curenv->recent, 4)) - (curenv->nice*2) ;
+}
+void calc_recent(struct Env* e){
+	fixed_point_t a = fix_scale(load,2);
+	fixed_point_t coeff = fix_div(a,fix_add(a,fix_int(1)));
+	e->recent = fix_add(fix_mul(e->recent,coeff),fix_int(e->nice));
+}
 
 //=================================================================================//
 //============================== QUEUE FUNCTIONS ==================================//
@@ -547,31 +570,28 @@ int env_get_nice(struct Env* e)
 	//TODO: [PROJECT'23.MS3 - #3] [2] BSD SCHEDULER - env_get_nice
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
-	return 0;
+	return e->nice;
 }
 void env_set_nice(struct Env* e, int nice_value)
 {
 	//TODO: [PROJECT'23.MS3 - #3] [2] BSD SCHEDULER - env_set_nice
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+	e->nice = nice_value;
 }
 int env_get_recent_cpu(struct Env* e)
 {
 	//TODO: [PROJECT'23.MS3 - #3] [2] BSD SCHEDULER - env_get_recent_cpu
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
-	return 0;
+	return fix_round(fix_scale(e->recent,100));
 }
 int get_load_average()
 {
 	//TODO: [PROJECT'23.MS3 - #3] [2] BSD SCHEDULER - get_load_average
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
-	return 0;
+	return fix_round(fix_scale(load,100));
 }
 /********* for BSD Priority Scheduler *************/
 //==================================================================================//

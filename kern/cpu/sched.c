@@ -9,7 +9,6 @@
 #include <kern/tests/utilities.h>
 #include <kern/cmd/command_prompt.h>
 
-
 uint32 isSchedMethodRR(){if(scheduler_method == SCH_RR) return 1; return 0;}
 uint32 isSchedMethodMLFQ(){if(scheduler_method == SCH_MLFQ) return 1; return 0;}
 uint32 isSchedMethodBSD(){if(scheduler_method == SCH_BSD) return 1; return 0;}
@@ -162,11 +161,13 @@ void sched_init_MLFQ(uint8 numOfLevels, uint8 *quantumOfEachLevel)
 void sched_init_BSD(uint8 numOfLevels, uint8 quantum)
 {
 #if USE_KHEAP
+
 	//TODO: [PROJECT'23.MS3 - #4] [2] BSD SCHEDULER - sched_init_BSD
 	//Your code is here
-	//Comment the following line
-	panic("Not implemented yet");
 
+	env_ready_queues = (struct Env_Queue*)kmalloc(sizeof(struct Env_Queue)*numOfLevels);
+	*quantums = quantum;
+	num_of_ready_queues = numOfLevels;
 	//=========================================
 	//DON'T CHANGE THESE LINES=================
 	scheduler_status = SCH_STOPPED;
@@ -194,7 +195,9 @@ struct Env* fos_scheduler_BSD()
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - fos_scheduler_BSD
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+	for(int i = num_of_ready_queues; i >=0;i--)
+		if(env_ready_queues[i].size)
+			return env_ready_queues[i].lh_first;
 	return NULL;
 }
 
@@ -207,11 +210,35 @@ void clock_interrupt_handler()
 	//TODO: [PROJECT'23.MS3 - #5] [2] BSD SCHEDULER - Your code is here
 	{
 
+		calc_recent(curenv);
 
+		uint32 t = ticks*(*quantums)/1000;
 
+		struct Env* e;
+		if(t!=(ticks-1)*(*quantums)/1000){
+			//new second
+			calc_load();
+			for(int i = 0; i<num_of_ready_queues;i++)
+				LIST_FOREACH(e,&env_ready_queues[i]){
+				calc_recent(e);
+				}
+		}
+		if(ticks%4){
+			struct Env* e;
+			for(int i = 0; i<num_of_ready_queues;i++){
+				e = env_ready_queues[i].lh_first;
+				while(e!=NULL){
+					struct Env* nxt = LIST_NEXT(e);
+					calc_pri(e);
+					if(e->priority!=i){
+						LIST_REMOVE(&env_ready_queues[i], e);
+						LIST_INSERT_TAIL(&env_ready_queues[i], e);
+					}
+					e = nxt;
+				}
+			}
+		}
 	}
-
-
 	/********DON'T CHANGE THIS LINE***********/
 	ticks++ ;
 	if(isPageReplacmentAlgorithmLRU(PG_REP_LRU_TIME_APPROX))
@@ -287,4 +314,3 @@ void update_WS_time_stamps()
 		}
 	}
 }
-
