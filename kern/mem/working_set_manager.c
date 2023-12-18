@@ -21,6 +21,9 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 	if(newopj == NULL){
 		panic("page dose not created");
 	}
+	uint32 *pg_table;
+	struct FrameInfo *frame_i = get_frame_info(e->env_page_directory, virtual_address, &pg_table);
+	frame_i->element = newopj;
 	newopj->virtual_address = virtual_address ;
 
 	return newopj;
