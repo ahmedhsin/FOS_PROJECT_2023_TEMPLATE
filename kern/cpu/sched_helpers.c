@@ -28,7 +28,7 @@ void calc_load(){
 	load = fix_add(cur,nxt);
 }
 void calc_pri(struct Env* e){
-	curenv->priority  = PRI_MAX - fix_round(fix_unscale(curenv->recent, 4)) - (curenv->nice*2) ;
+	e->priority  = PRI_MAX - fix_round(fix_unscale(e->recent, 4)) - (e->nice*2) ;
 }
 void calc_recent(struct Env* e){
 	fixed_point_t a = fix_scale(load,2);
@@ -578,6 +578,8 @@ void env_set_nice(struct Env* e, int nice_value)
 	//Your code is here
 	//Comment the following line
 	e->nice = nice_value;
+	if(e->env_status!=ENV_NEW)
+		calc_pri(e);
 }
 int env_get_recent_cpu(struct Env* e)
 {

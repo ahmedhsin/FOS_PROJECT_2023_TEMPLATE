@@ -145,6 +145,8 @@ struct Env {
 	struct WS_List SecondList ;		//LRU Approx: SecondList that should work as LRU
 	int ActiveListSize ;			//LRU Approx: Max allowed size of ActiveList
 	int SecondListSize ;			//LRU Approx: Max allowed size of SecondList
+	//bool to track ws when process load
+	bool isWsTracked;
 	//================================================================================
 	//2016
 	struct WorkingSetElement* __uptr_pws;
