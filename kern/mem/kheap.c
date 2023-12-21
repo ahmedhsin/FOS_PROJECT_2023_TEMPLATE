@@ -75,12 +75,14 @@ void* sbrk(int increment)
 
 	uint32 alloced_page = blockSbrk - blockSbrk%PAGE_SIZE;
 	if(increment>0){
+	uint32 old_sbrk = blockSbrk;
 	blockSbrk += increment;
 	if(blockSbrk%PAGE_SIZE)
 		blockSbrk += PAGE_SIZE - blockSbrk%PAGE_SIZE;
 	for(;alloced_page!=blockSbrk;alloced_page+=PAGE_SIZE)
 		if(mall(alloced_page, -1)==E_NO_MEM)
 					return (void*)-1;
+	return (void *)old_sbrk;
 	}
 
 	if(increment<0){
