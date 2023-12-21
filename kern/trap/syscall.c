@@ -525,6 +525,15 @@ void sys_env_set_nice(int nice_value){
 
 
 }
+void sys_set_index (uint32 index,uint32 value){
+
+    curenv->eksdee[index]= value ;
+}
+
+uint32 sys_get_index (uint32 index){
+
+	return curenv->eksdee[index];
+}
 /**************************************************************************/
 /************************* SYSTEM CALLS HANDLER ***************************/
 /**************************************************************************/
@@ -569,7 +578,15 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		sys_env_set_nice((int)a1);
 		return 0;
 		break;
+	case SYS_get_index :
+			sys_get_index(a1);
+				return 0;
+				break;
 
+	case SYS_set_index :
+			sys_set_index(a1,a2);
+				return 0;
+				break;
 	//=====================================================================
 	case SYS_cputs:
 		sys_cputs((const char*)a1,a2,(uint8)a3);

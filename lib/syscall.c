@@ -368,3 +368,14 @@ void sys_env_set_nice(int nice_value){
 	 syscall(SYS_env_set_nice,(uint32)nice_value,0,0,0,0);
 	 return ;
 }
+uint32 sys_get_index (uint32 index){
+
+	 return syscall(SYS_get_index ,index,0,0,0,0);
+
+}
+void sys_set_index (uint32 index,uint32 value){
+
+	 syscall(SYS_set_index ,index,value,0,0,0);
+		 return ;
+
+}
