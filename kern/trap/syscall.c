@@ -508,6 +508,7 @@ void *sys_sbrk(int increment)
 		for (; current > curenv->seg_break; current -= PAGE_SIZE)
 		{
 			unmap_frame(curenv->env_page_directory, current);
+			env_page_ws_invalidate(curenv, current);
 		}
 		return (void *)curenv->seg_break;
 	}
