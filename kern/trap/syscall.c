@@ -503,11 +503,12 @@ void *sys_sbrk(int increment)
 	else
 	{
 
-		current = ROUNDDOWN(curenv->seg_break, PAGE_SIZE);
+	    current = ROUNDDOWN(curenv->seg_break, PAGE_SIZE);
 		curenv->seg_break += increment;
 		for (; current > curenv->seg_break; current -= PAGE_SIZE)
 		{
 			unmap_frame(curenv->env_page_directory, current);
+			env_page_ws_invalidate(curenv, current);
 		}
 		return (void *)curenv->seg_break;
 	}
