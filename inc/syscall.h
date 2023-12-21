@@ -60,7 +60,9 @@ enum
 	SYS_allocate_user_mem,
 	SYS_free_user_mem,
 	SYS_get_Limit,
-	SYS_env_set_nice
+	SYS_env_set_nice,
+	SYS_get_index ,
+	SYS_set_index
 };
 
 #endif /* !FOS_INC_SYSCALL_H */
