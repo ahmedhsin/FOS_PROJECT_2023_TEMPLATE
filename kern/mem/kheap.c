@@ -244,9 +244,17 @@ void *krealloc(void *virtual_address, uint32 new_size)
 	// Write your code here, remove the panic and write your code
 	if (virtual_address == NULL) return kmalloc(new_size);
 	if (new_size <= DYN_ALLOC_MAX_BLOCK_SIZE){
+		if (new_size <= 0) return NULL;
+		uint32 *new_Address =  kmalloc(new_size);
+		if (!new_Address) return NULL;
+		uint8* old = (uint8 *)virtual_address;
+		uint8* new = (uint8 *)new_Address;
+		for (;old && new;old++, new++ ){
+			*new = *old;
+		}
 		kfree(virtual_address);
-		if (new_size > 0) return kmalloc(new_size);
-		return NULL;
+		return new_Address;
+		
 	}
 	int requiredPages = (new_size % PAGE_SIZE == 0 ? new_size / PAGE_SIZE : new_size / PAGE_SIZE + 1);
 	int actualPages = KheapPagesTracker[KPAGENUMBER((uint32)virtual_address)];
@@ -269,9 +277,22 @@ void *krealloc(void *virtual_address, uint32 new_size)
 	if (freePagesN + freePagesP < requiredPages-actualPages){
 		void *relocate = kmalloc(new_size);
 		if (relocate == NULL) return virtual_address;
+		uint8* old = (uint8 *)virtual_address;
+		uint8* new = (uint8 *)relocate;
+		for (;old && new;old++, new++ ){
+			*new = *old;
+		}
 		kfree(virtual_address);
 		return relocate;
 	}
-	return kPagesAllocate(tmp_va, requiredPages);
+	void *new_address = kPagesAllocate(tmp_va, requiredPages);
+	if(!new_address) return NULL;
+	uint8* old = (uint8 *)virtual_address;
+	uint8* new = (uint8 *)new_address;
+	for (;old && new;old++, new++ ){
+		*new = *old;
+	}
+	kfree(virtual_address);
+	return new_address;
 	//panic("krealloc() is not implemented yet...!!");
 }
