@@ -113,7 +113,7 @@ struct Env {
 
 	/*2023*/
 	//TODO: [PROJECT'23.MS2 - #07] [2] USER HEAP - initialize of Env: add suitable code here
-	uint32 eksdee[UINT_MAX/PAGE_SIZE];
+	uint32 eksdee[(USER_HEAP_MAX-USER_HEAP_START)/PAGE_SIZE];
 	//==================================================================================
 	uint32 start;
 	uint32 seg_break;
