@@ -29,6 +29,10 @@ void calc_load(){
 }
 void calc_pri(struct Env* e){
 	e->priority  = PRI_MAX - fix_round(fix_unscale(e->recent, 4)) - (e->nice*2) ;
+	if(e->priority<0)
+		e->priority = 0;
+	if(e->priority>=num_of_ready_queues)
+		e->priority = num_of_ready_queues;
 }
 void calc_recent(struct Env* e){
 	fixed_point_t a = fix_scale(load,2);
