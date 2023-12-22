@@ -368,3 +368,6 @@ void sys_env_set_nice(int nice_value){
 	 syscall(SYS_env_set_nice,(uint32)nice_value,0,0,0,0);
 	 return ;
 }
+uint32 sys_env_get_malloced(){
+	return syscall(SYS_env_get_malloced,0,0,0,0,0);
+}

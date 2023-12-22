@@ -525,6 +525,9 @@ void sys_env_set_nice(int nice_value){
 
 
 }
+uint32 sys_env_get_malloced(){
+	return (uint32)(&curenv->malloced);
+}
 /**************************************************************************/
 /************************* SYSTEM CALLS HANDLER ***************************/
 /**************************************************************************/
@@ -560,7 +563,9 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		sys_env_set_nice((int)a1);
 		return 0;
 		break;
-
+	case SYS_env_get_malloced:
+		return sys_env_get_malloced();
+		break;
 	//=====================================================================
 	case SYS_cputs:
 		sys_cputs((const char*)a1,a2,(uint8)a3);

@@ -118,7 +118,7 @@ struct Env {
 	uint32 start;
 	uint32 seg_break;
 	uint32 hard_limit;
-
+	uint32 malloced[(USER_HEAP_MAX - USER_HEAP_START)/PAGE_SIZE];//UINT_MAX/PAGE_SIZE];
 	//================
 	/*WORKING SET*/
 	//================
