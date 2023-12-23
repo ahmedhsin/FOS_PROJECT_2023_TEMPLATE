@@ -373,5 +373,12 @@ void *realloc_block_FF(void* va, uint32 new_size){
 
 	free_block(va);
 	void* new_address = alloc_block_FF(new_size);
+	if (!new_address) return NULL;
+	struct BlockMetaData *new_block = (struct BlockMetaData*)(new_address+sizeOfMetaData());
+	uint8* new_data = new_address+sizeOfMetaData();
+	uint8* old_data = va+sizeOfMetaData();
+	for(;old_data<(uint8*)next_block;old_data++,new_data++)
+		*new_data = *old_data;
+
 	return new_address;
 }
